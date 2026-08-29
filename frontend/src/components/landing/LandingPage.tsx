@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Mail, QrCode } from 'lucide-react';
+import {
+  Search,
+  Mail,
+  Heart,
+  ArrowLeft,
+  School
+} from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { AuthLoginModal } from '../auth/AuthLoginModal';
 
@@ -8,6 +14,7 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { switchRole, students, setSelectedStudentId } = useApp();
 
+  const [activeHeroTab, setActiveHeroTab] = useState<'home' | 'about'>('home');
   const [searchTerm, setSearchTerm] = useState('');
   const [loginModalState, setLoginModalState] = useState<{
     isOpen: boolean;
@@ -16,6 +23,30 @@ export const LandingPage: React.FC = () => {
     isOpen: false,
     role: 'catechist'
   });
+
+  // Tự động chuyển tab khi URL có hash #gioi-thieu
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#gioi-thieu') {
+        setActiveHeroTab('about');
+      } else {
+        setActiveHeroTab('home');
+      }
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const handleSwitchTab = (tab: 'home' | 'about') => {
+    setActiveHeroTab(tab);
+    if (tab === 'about') {
+      window.location.hash = 'gioi-thieu';
+    } else {
+      window.history.pushState('', document.title, window.location.pathname);
+    }
+  };
 
   const handleOpenLogin = (role: 'admin' | 'catechist') => {
     setLoginModalState({
@@ -56,7 +87,10 @@ export const LandingPage: React.FC = () => {
       <header className="bg-surface shadow-sm sticky top-0 z-40 border-b border-outline-variant/20">
         <div className="flex justify-between items-center w-full px-4 md:px-10 max-w-[1536px] mx-auto h-20">
           {/* Brand */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => handleSwitchTab('home')}
+          >
             <img
               alt="Logo Ban Giáo Lý Giáo Xứ Sơn Lộc"
               className="h-12 w-12 rounded-full object-cover shadow-md border-2 border-primary/20 hover:scale-105 transition-transform"
@@ -73,36 +107,47 @@ export const LandingPage: React.FC = () => {
           {/* Navigation Links (Desktop) */}
           <nav className="hidden md:flex items-center gap-6">
             <button
-              onClick={() => navigate('/')}
-              className="text-primary font-bold border-b-2 border-primary pb-1 text-sm md:text-base transition-colors duration-200 hover:text-secondary"
+              onClick={() => handleSwitchTab('home')}
+              className={`font-bold text-sm md:text-base pb-1 transition-all cursor-pointer ${
+                activeHeroTab === 'home'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-on-surface-variant hover:text-primary'
+              }`}
             >
               Trang chủ
             </button>
             <a
-              className="text-on-surface-variant text-sm md:text-base transition-colors duration-200 hover:text-secondary"
+              className="text-on-surface-variant text-sm md:text-base transition-colors duration-200 hover:text-primary"
               href="#tra-cuu"
+              onClick={() => {
+                if (activeHeroTab === 'about') setActiveHeroTab('home');
+              }}
             >
               Tra cứu phụ huynh
             </a>
-            <a
-              className="text-on-surface-variant text-sm md:text-base transition-colors duration-200 hover:text-secondary"
-              href="#gioi-thieu"
+            <button
+              onClick={() => handleSwitchTab('about')}
+              className={`font-bold text-sm md:text-base pb-1 transition-all cursor-pointer ${
+                activeHeroTab === 'about'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-on-surface-variant hover:text-primary'
+              }`}
             >
               Giới thiệu
-            </a>
+            </button>
           </nav>
 
-          {/* Mobile Right Quick Login */}
-          <div className="flex sm:hidden items-center gap-2">
+          {/* Mobile & Desktop Right Quick Login */}
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => handleOpenLogin('catechist')}
-              className="bg-primary text-white text-xs px-3 py-1.5 rounded-full font-semibold"
+              className="bg-primary text-white text-xs sm:text-sm px-4 py-2 rounded-full font-bold shadow-xs hover:bg-primary/90 transition-all cursor-pointer"
             >
-              GLV
+              Đăng nhập GLV
             </button>
             <button
               onClick={() => handleOpenLogin('admin')}
-              className="bg-surface-container-high text-primary text-xs px-3 py-1.5 rounded-full font-semibold border border-primary/20"
+              className="hidden sm:inline-flex bg-surface-container-high text-primary text-xs sm:text-sm px-4 py-2 rounded-full font-bold border border-primary/20 hover:bg-surface-container transition-all cursor-pointer"
             >
               Admin
             </button>
@@ -112,8 +157,8 @@ export const LandingPage: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-grow">
-        {/* Hero Section */}
-        <section className="relative bg-[#87d5e8] overflow-hidden pt-8 pb-12 lg:pt-16 lg:pb-20">
+        {/* Dynamic Hero Section with Unified Background */}
+        <section className="relative bg-[#87d5e8] overflow-hidden pt-8 pb-12 lg:pt-14 lg:pb-16 min-h-[460px] flex items-center transition-all duration-500">
           {/* Memphis Pattern Decor */}
           <div
             className="absolute inset-0 pointer-events-none opacity-80"
@@ -126,41 +171,117 @@ export const LandingPage: React.FC = () => {
             }}
           ></div>
 
-          <div className="relative z-10 px-4 md:px-10 max-w-[1536px] mx-auto flex flex-col lg:flex-row items-center gap-12">
-            {/* Text Content */}
-            <div className="w-full lg:w-1/2 flex flex-col text-center lg:text-left gap-4">
-              <h1 className="font-extrabold text-[#005d6c] text-3xl sm:text-4xl lg:text-5xl leading-tight font-sans">
-                Nơi kết nối phụ huynh và các em với giáo lý viên
-              </h1>
-              <p className="text-base sm:text-lg text-[#005d6c]/85 max-w-2xl mx-auto lg:mx-0 bg-white/60 p-4 rounded-xl backdrop-blur-sm shadow-sm font-body">
-                Nền tảng quản trị thông tin học sinh, sổ điểm và kết nối phụ huynh Ban Giáo Lý Giáo Xứ Sơn Lộc.
-              </p>
+          <div className="relative z-10 px-4 md:px-10 max-w-[1536px] mx-auto w-full">
+            {/* ================= 1. GIAO DIỆN TRANG CHỦ (HERO VIEW) ================= */}
+            {activeHeroTab === 'home' && (
+              <div className="flex flex-col lg:flex-row items-center gap-10 animate-fadeIn">
+                {/* Text Content */}
+                <div className="w-full lg:w-1/2 flex flex-col text-center lg:text-left gap-4">
+                  <h1 className="font-extrabold text-[#005d6c] text-3xl sm:text-4xl lg:text-5xl leading-tight font-sans">
+                    Nơi kết nối phụ huynh và các em với giáo lý viên
+                  </h1>
+                  <p className="text-base sm:text-lg text-[#005d6c]/85 max-w-2xl mx-auto lg:mx-0 bg-white/60 p-4 rounded-xl backdrop-blur-sm shadow-sm font-body">
+                    Nền tảng quản trị thông tin học sinh, sổ điểm, điểm danh và kết nối phụ huynh Ban Giáo Lý Giáo Xứ Sơn Lộc.
+                  </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mt-4">
-                <button
-                  onClick={() => handleOpenLogin('catechist')}
-                  className="bg-primary text-white font-semibold text-sm px-8 py-3.5 rounded-full hover:scale-95 active:scale-90 transition-all shadow-lg shadow-primary/25 w-full sm:w-auto text-center cursor-pointer"
-                >
-                  Đăng nhập Giáo Lý Viên
-                </button>
-                <button
-                  onClick={() => handleOpenLogin('admin')}
-                  className="bg-white text-primary border border-primary/30 font-semibold text-sm px-8 py-3.5 rounded-full hover:scale-95 active:scale-90 hover:bg-surface-container transition-all shadow-sm w-full sm:w-auto text-center cursor-pointer"
-                >
-                  Đăng nhập Ban Quản Trị (Admin)
-                </button>
+                  <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 mt-3">
+                    <button
+                      onClick={() => handleOpenLogin('catechist')}
+                      className="bg-primary text-white font-bold text-sm px-7 py-3.5 rounded-full hover:scale-95 active:scale-90 transition-all shadow-md shadow-primary/25 w-full sm:w-auto text-center cursor-pointer"
+                    >
+                      Đăng nhập Giáo Lý Viên
+                    </button>
+                    <button
+                      onClick={() => handleOpenLogin('admin')}
+                      className="bg-white text-primary border border-primary/30 font-bold text-sm px-7 py-3.5 rounded-full hover:scale-95 active:scale-90 hover:bg-surface-container transition-all shadow-sm w-full sm:w-auto text-center cursor-pointer"
+                    >
+                      Đăng nhập Ban Quản Trị
+                    </button>
+                  </div>
+                </div>
+
+                {/* Original Banner Illustration */}
+                <div className="w-full lg:w-1/2 flex justify-center relative">
+                  <div className="absolute inset-0 bg-[#ffddb5]/40 rounded-[3rem] -rotate-3 scale-105 pointer-events-none blur-3xl"></div>
+                  <img
+                    alt="Banner Giáo Lý Sơn Lộc"
+                    className="relative z-10 w-full rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,104,120,0.25)] border border-white/60 max-w-sm sm:max-w-md object-cover"
+                    src="/banner.jpg"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Original Banner Illustration */}
-            <div className="w-full lg:w-1/2 flex justify-center relative">
-              <div className="absolute inset-0 bg-[#ffddb5]/40 rounded-[3rem] -rotate-3 scale-105 pointer-events-none blur-3xl"></div>
-              <img
-                alt="Banner Giáo Lý Sơn Lộc"
-                className="relative z-10 w-full rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,104,120,0.25)] border border-white/60 max-w-sm sm:max-w-md object-cover"
-                src="/banner.jpg"
-              />
-            </div>
+            {/* ================= 2. GIAO DIỆN GIỚI THIỆU (ABOUT VIEW) ================= */}
+            {activeHeroTab === 'about' && (
+              <div className="max-w-4xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl p-6 sm:p-10 border border-white/80 shadow-2xl animate-fadeIn space-y-6">
+                {/* Header Card */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant/30">
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-[#005d6c] font-sans">
+                      Cổng Thông Tin Ban Giáo Lý Giáo Xứ Sơn Lộc
+                    </h2>
+                  </div>
+
+                  <button
+                    onClick={() => handleSwitchTab('home')}
+                    className="px-4 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-outline-variant/40 shrink-0"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Quay lại Trang Chủ</span>
+                  </button>
+                </div>
+
+                {/* Đơn vị chủ quản */}
+                <div className="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 space-y-2 shadow-2xs">
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-outline">
+                      Đơn Vị Chủ Quản &amp; Vận Hành
+                    </div>
+                    <div className="text-base font-extrabold text-on-surface mt-0.5">
+                      Ban Giáo Lý Giáo Xứ Sơn Lộc
+                    </div>
+                  </div>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">
+                    Chịu trách nhiệm nội dung đào tạo đức tin, phân công Giáo Lý Viên, quản lý học bạ và kết nối quý Phụ Huynh trong Giáo xứ.
+                  </p>
+                </div>
+
+                {/* Sứ mệnh & Mục đích */}
+                <div className="p-5 rounded-2xl bg-[#87d5e8]/20 border border-[#87d5e8]/50 space-y-2">
+                  <h3 className="text-sm font-bold text-[#005d6c] flex items-center gap-2 font-sans">
+                    <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+                    <span>Mục Đích &amp; Ý Nghĩa Ứng Dụng</span>
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#005d6c]/90 leading-relaxed font-body">
+                    Hệ thống được xây dựng nhằm giúp các Thầy Cô Giáo Lý Viên quản lý sổ điểm, điểm danh chuyên cần các Chúa Nhật một cách nhanh chóng, chính xác. Đồng thời, giúp quý Phụ Huynh dễ dàng theo dõi sát sao kết quả học tập và rèn luyện đức tin của các em thiếu nhi một cách minh bạch, tiện lợi.
+                  </p>
+                </div>
+
+                {/* Liên hệ bên trái & Phát triển & xây dựng bên phải (thay thế nút Gửi Góp Ý) */}
+                <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-outline-variant/20">
+                  <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+                    <Mail className="w-4 h-4 text-primary shrink-0" />
+                    <span>Mọi ý kiến đóng góp &amp; hỗ trợ kỹ thuật:</span>
+                    <a
+                      href="mailto:nguyenphuc20050@gmail.com"
+                      className="text-primary font-bold hover:underline"
+                    >
+                      nguyenphuc20050@gmail.com
+                    </a>
+                  </div>
+
+                  <div className="text-left sm:text-right shrink-0">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-outline">
+                      PHÁT TRIỂN &amp; XÂY DỰNG
+                    </div>
+                    <div className="text-sm font-extrabold text-on-surface">
+                      GLV Giuse Antôn Nguyễn Huy Phúc
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -169,7 +290,7 @@ export const LandingPage: React.FC = () => {
           <div className="max-w-[1536px] mx-auto flex flex-col items-center gap-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-bold text-on-surface mb-2 font-sans">
-                Tra cứu Sổ Học Bạ & Điểm Số Dành Cho Phụ Huynh
+                Tra cứu Sổ Học Bạ &amp; Điểm Số Dành Cho Phụ Huynh
               </h2>
               <p className="text-sm sm:text-base text-on-surface-variant font-body">
                 Nhập chính xác <strong>Mã số học sinh</strong> (do Giáo lý viên cung cấp) để tra cứu học bạ điện tử và bảng điểm của các em.
@@ -207,10 +328,10 @@ export const LandingPage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer id="gioi-thieu" className="bg-[#b9cdd2] text-[#45575c]">
-        <div className="w-full py-16 px-4 md:px-10 max-w-[1536px] mx-auto flex flex-col md:flex-row justify-between gap-12">
+      <footer className="bg-[#b9cdd2] text-[#45575c]">
+        <div className="w-full py-14 px-4 md:px-10 max-w-[1536px] mx-auto flex flex-col md:flex-row justify-between gap-10">
           {/* Brand & Copyright */}
-          <div className="flex flex-col gap-4 max-w-sm">
+          <div className="flex flex-col gap-3 max-w-sm">
             <div className="flex items-center gap-3">
               <img
                 alt="Logo Ban Giáo Lý Giáo Xứ Sơn Lộc"
@@ -221,39 +342,51 @@ export const LandingPage: React.FC = () => {
                 Ban Giáo Lý Giáo Xứ Sơn Lộc
               </span>
             </div>
-            <p className="text-sm text-[#45575c]/80 font-body">
-              © 2026 Ban Giáo Lý Giáo Xứ Sơn Lộc. All rights reserved.
+            <p className="text-xs text-[#45575c]/80 font-body leading-relaxed">
+              © 2026 Ban Giáo Lý Giáo Xứ Sơn Lộc. Hệ thống quản trị giáo lý và sổ liên lạc điện tử.
             </p>
           </div>
 
-          {/* Links */}
-          <div className="flex flex-col sm:flex-row gap-8 sm:gap-16">
-            <div className="flex flex-col gap-3">
+          {/* Links & Contact */}
+          <div className="flex flex-col sm:flex-row gap-8 sm:gap-14">
+            <div className="flex flex-col gap-2.5">
               <span className="font-bold text-xs uppercase tracking-wider text-[#45575c]">
-                Thông tin
+                Liên kết nhanh
               </span>
-              <a className="text-sm text-[#45575c]/80 hover:text-primary transition-colors" href="#">
-                Liên hệ
+              <button
+                onClick={() => handleSwitchTab('home')}
+                className="text-left text-xs text-[#45575c]/80 hover:text-primary transition-colors cursor-pointer"
+              >
+                Trang chủ
+              </button>
+              <a
+                className="text-xs text-[#45575c]/80 hover:text-primary transition-colors"
+                href="#tra-cuu"
+                onClick={() => {
+                  if (activeHeroTab === 'about') setActiveHeroTab('home');
+                }}
+              >
+                Tra cứu phụ huynh
               </a>
-              <a className="text-sm text-[#45575c]/80 hover:text-primary transition-colors" href="#">
-                Chính sách bảo mật
-              </a>
-              <a className="text-sm text-[#45575c]/80 hover:text-primary transition-colors" href="#">
-                Điều khoản sử dụng
-              </a>
+              <button
+                onClick={() => handleSwitchTab('about')}
+                className="text-left text-xs text-[#45575c]/80 hover:text-primary transition-colors cursor-pointer"
+              >
+                Giới thiệu dự án
+              </button>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2.5">
               <span className="font-bold text-xs uppercase tracking-wider text-[#45575c]">
-                Mạng xã hội
+                Hỗ trợ &amp; Liên hệ
               </span>
-              <div className="flex gap-4">
-                <a className="text-[#45575c]/80 hover:text-primary transition-colors p-2 bg-white/30 rounded-full" href="#">
-                  <QrCode className="w-5 h-5" />
-                </a>
-                <a className="text-[#45575c]/80 hover:text-primary transition-colors p-2 bg-white/30 rounded-full" href="#">
-                  <Mail className="w-5 h-5" />
-                </a>
+              <div className="flex items-center gap-2 text-xs text-[#45575c]/90">
+                <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>nguyenphuc20050@gmail.com</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-[#45575c]/90">
+                <School className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>Giáo xứ Sơn Lộc - Phú Cường</span>
               </div>
             </div>
           </div>
