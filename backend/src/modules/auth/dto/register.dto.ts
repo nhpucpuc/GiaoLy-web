@@ -1,11 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { UserRole } from '@prisma/client';
 
 export class RegisterDto {
-  @ApiProperty({ example: 'tuyetmai.glv@gxsonloc.vn', description: 'Email đăng ký' })
-  @IsEmail({}, { message: 'Email không hợp lệ' })
-  @IsNotEmpty({ message: 'Email không được để trống' })
+  @ApiProperty({ example: 'tuyetmai hoặc tuyetmai@gxsonloc.vn', description: 'Tài khoản / Email đăng ký' })
+  @IsString({ message: 'Tài khoản phải là chuỗi ký tự' })
+  @IsNotEmpty({ message: 'Tài khoản không được để trống' })
   email: string;
 
   @ApiProperty({ example: 'password123', description: 'Mật khẩu' })
