@@ -1,0 +1,736 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  CalendarCheck,
+  Search,
+  Save,
+  CheckCircle2,
+  AlertCircle,
+  RotateCcw,
+  Calendar,
+  Filter,
+  Users,
+  UserCheck,
+  UserX,
+  Trash2,
+  Plus
+} from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import { GenderAvatar } from '../shared/GenderAvatar';
+import { api } from '../../services/api';
+
+export interface AbsenceItem {
+  id?: string;
+  date: string;
+  type: 'LE_CHUA_NHAT' | 'GIO_GIAO_LY';
+  status: 'VANG_CO_PHEP' | 'VANG_KHONG_PHEP';
+  notes?: string;
+}
+
+export interface StudentAttendanceRow {
+  studentId: string;
+  holyName: string;
+  fullName: string;
+  gender: string;
+  code: string;
+  absentCount: number;
+  absences: AbsenceItem[];
+  isDirty?: boolean;
+}
+
+export const AttendanceView: React.FC = () => {
+  const {
+    students,
+    classes,
+    selectedClassId,
+    setSelectedClassId,
+    currentRole,
+    currentUser
+  } = useApp();
+
+  // Xác định lớp phụ trách
+  const activeClassId = currentRole === 'catechist' && currentUser?.assignedClassId
+    ? currentUser.assignedClassId
+    : selectedClassId || (classes[0]?.id ?? '');
+
+  const activeClass = classes.find((c) => c.id === activeClassId);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [attendanceData, setAttendanceData] = useState<Record<string, StudentAttendanceRow>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Tải danh sách học sinh & lịch sử điểm danh của lớp
+  const fetchClassAttendance = async () => {
+    if (!activeClassId) return;
+    setIsLoading(true);
+
+    try {
+      const records = await api.getAttendanceByClass(activeClassId).catch(() => []);
+      const classStudents = students.filter((s) => s.classId === activeClassId);
+
+      const rows: Record<string, StudentAttendanceRow> = {};
+
+      classStudents.forEach((student) => {
+        const studentRecords = Array.isArray(records)
+          ? records.filter((r: any) => r.studentId === student.id)
+          : [];
+
+        const absences: AbsenceItem[] = studentRecords.map((r: any) => ({
+          id: r.id,
+          date: r.date || new Date().toISOString().split('T')[0],
+          type: r.type === 'GIO_GIAO_LY' ? 'GIO_GIAO_LY' : 'LE_CHUA_NHAT',
+          status: r.status === 'VANG_KHONG_PHEP' ? 'VANG_KHONG_PHEP' : 'VANG_CO_PHEP',
+          notes: r.notes || '',
+        }));
+
+        rows[student.id] = {
+          studentId: student.id,
+          holyName: student.holyName,
+          fullName: student.fullName,
+          gender: student.gender,
+          code: student.code || student.id,
+          absentCount: absences.length,
+          absences,
+          isDirty: false,
+        };
+      });
+
+      setAttendanceData(rows);
+    } catch (err: any) {
+      showToast('Lỗi khi tải dữ liệu điểm danh: ' + (err.message || ''), 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClassAttendance();
+  }, [activeClassId, students]);
+
+  // Thay đổi số lượng ngày nghỉ của học sinh (Kèm cơ chế an toàn tránh mất dữ liệu)
+  const handleAbsentCountChange = (studentId: string, count: number) => {
+    const current = attendanceData[studentId];
+    if (!current) return;
+
+    const newCount = Math.max(0, Math.min(20, count));
+    const currentLen = current.absences.length;
+
+    if (newCount === currentLen) return;
+
+    // Kiểm tra an toàn trước khi cập nhật state (đặt ngoài setState để không bị gọi 2 lần bởi React)
+    if (newCount < currentLen) {
+      const willBeRemoved = current.absences.slice(newCount);
+      const hasDetailedData = willBeRemoved.some(
+        (a) => (a.notes && a.notes.trim() !== '') || a.status === 'VANG_KHONG_PHEP'
+      );
+
+      if (hasDetailedData || currentLen >= 2) {
+        const isConfirmed = window.confirm(
+          `Em ${current.holyName} ${current.fullName} đang có ${currentLen} ngày nghỉ chi tiết. Bạn có chắc chắn muốn giảm xuống còn ${newCount} ngày không? (${currentLen - newCount} ngày nghỉ phía sau sẽ bị bỏ).`
+        );
+        if (!isConfirmed) {
+          return; // Hủy thao tác, giữ nguyên số ngày nghỉ
+        }
+      }
+    }
+
+    setAttendanceData((prev) => {
+      const row = prev[studentId];
+      if (!row) return prev;
+
+      let newAbsences = [...row.absences];
+
+      if (newCount > row.absences.length) {
+        // Thêm các ngày nghỉ mới
+        const diff = newCount - row.absences.length;
+        const todayStr = new Date().toISOString().split('T')[0];
+        for (let i = 0; i < diff; i++) {
+          newAbsences.push({
+            date: todayStr,
+            type: 'LE_CHUA_NHAT',
+            status: 'VANG_CO_PHEP',
+            notes: '',
+          });
+        }
+      } else if (newCount < row.absences.length) {
+        newAbsences = newAbsences.slice(0, newCount);
+      }
+
+      return {
+        ...prev,
+        [studentId]: {
+          ...row,
+          absentCount: newCount,
+          absences: newAbsences,
+          isDirty: true,
+        },
+      };
+    });
+  };
+
+  // Cập nhật chi tiết 1 ngày nghỉ
+  const handleAbsenceDetailChange = (
+    studentId: string,
+    index: number,
+    field: keyof AbsenceItem,
+    value: any
+  ) => {
+    setAttendanceData((prev) => {
+      const current = prev[studentId];
+      if (!current) return prev;
+
+      const updatedAbsences = [...current.absences];
+      if (!updatedAbsences[index]) return prev;
+
+      updatedAbsences[index] = {
+        ...updatedAbsences[index],
+        [field]: value,
+      };
+
+      return {
+        ...prev,
+        [studentId]: {
+          ...current,
+          absences: updatedAbsences,
+          isDirty: true,
+        },
+      };
+    });
+  };
+
+  // Xóa 1 ngày nghỉ
+  const handleRemoveAbsence = (studentId: string, index: number) => {
+    setAttendanceData((prev) => {
+      const current = prev[studentId];
+      if (!current) return prev;
+
+      const updatedAbsences = current.absences.filter((_, i) => i !== index);
+
+      return {
+        ...prev,
+        [studentId]: {
+          ...current,
+          absentCount: updatedAbsences.length,
+          absences: updatedAbsences,
+          isDirty: true,
+        },
+      };
+    });
+  };
+
+  // Thêm nhanh 1 ngày nghỉ
+  const handleAddAbsenceQuick = (studentId: string) => {
+    setAttendanceData((prev) => {
+      const current = prev[studentId];
+      if (!current) return prev;
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const updatedAbsences = [
+        ...current.absences,
+        {
+          date: todayStr,
+          type: 'LE_CHUA_NHAT' as const,
+          status: 'VANG_CO_PHEP' as const,
+          notes: '',
+        },
+      ];
+
+      return {
+        ...prev,
+        [studentId]: {
+          ...current,
+          absentCount: updatedAbsences.length,
+          absences: updatedAbsences,
+          isDirty: true,
+        },
+      };
+    });
+  };
+
+  // Lưu toàn bộ danh sách điểm danh
+  const handleSaveAll = async () => {
+    if (!activeClassId) return;
+    setIsSaving(true);
+
+    try {
+      const payload = Object.values(attendanceData).map((row) => ({
+        studentId: row.studentId,
+        absences: row.absences.map((a) => ({
+          date: a.date,
+          type: a.type,
+          status: a.status,
+          notes: a.notes || '',
+        })),
+      }));
+
+      await api.batchSyncAttendance(activeClassId, payload);
+
+      setAttendanceData((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((id) => {
+          next[id] = { ...next[id], isDirty: false };
+        });
+        return next;
+      });
+
+      showToast('Đã lưu dữ liệu điểm danh thành công!');
+    } catch (err: any) {
+      showToast('Lỗi khi lưu điểm danh: ' + (err.message || ''), 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Lưu riêng cho 1 học sinh
+  const handleSaveSingle = async (studentId: string) => {
+    const row = attendanceData[studentId];
+    if (!row || !activeClassId) return;
+
+    try {
+      await api.batchSyncAttendance(activeClassId, [
+        {
+          studentId: row.studentId,
+          absences: row.absences.map((a) => ({
+            date: a.date,
+            type: a.type,
+            status: a.status,
+            notes: a.notes || '',
+          })),
+        },
+      ]);
+
+      setAttendanceData((prev) => ({
+        ...prev,
+        [studentId]: { ...prev[studentId], isDirty: false },
+      }));
+
+      showToast(`Đã lưu điểm danh cho em ${row.holyName} ${row.fullName}!`);
+    } catch (err: any) {
+      showToast('Lỗi: ' + (err.message || ''), 'error');
+    }
+  };
+
+  // Danh sách hiển thị sau khi lọc tìm kiếm
+  const filteredStudentRows = useMemo(() => {
+    const list = Object.values(attendanceData);
+    if (!searchQuery.trim()) return list;
+
+    const query = searchQuery.toLowerCase().trim();
+    return list.filter(
+      (r) =>
+        r.fullName.toLowerCase().includes(query) ||
+        r.holyName.toLowerCase().includes(query) ||
+        (r.code && r.code.toLowerCase().includes(query))
+    );
+  }, [attendanceData, searchQuery]);
+
+  // Thống kê hòa nhã, chuẩn mực
+  const stats = useMemo(() => {
+    const all = Object.values(attendanceData);
+    const totalStudents = all.length;
+    const absentStudents = all.filter((r) => r.absentCount > 0).length;
+    const fullAttendanceStudents = totalStudents - absentStudents;
+    const totalAbsenceDays = all.reduce((sum, r) => sum + r.absentCount, 0);
+
+    return { totalStudents, absentStudents, fullAttendanceStudents, totalAbsenceDays };
+  }, [attendanceData]);
+
+  const hasUnsavedChanges = Object.values(attendanceData).some((r) => r.isDirty);
+
+  return (
+    <div className="space-y-6 pb-12 font-body max-w-7xl mx-auto animate-fadeIn">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl flex items-center gap-2.5 shadow-lg text-xs font-semibold border ${
+            toastMessage.type === 'success'
+              ? 'bg-surface-container-lowest text-emerald-800 border-emerald-300'
+              : 'bg-surface-container-lowest text-rose-800 border-rose-300'
+          }`}
+        >
+          {toastMessage.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+          )}
+          <span>{toastMessage.text}</span>
+        </div>
+      )}
+
+      {/* Header & Controls Panel */}
+      <section className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-5 sm:p-6 shadow-2xs">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-md bg-surface-container-low text-on-surface-variant font-medium text-xs border border-outline-variant/30 flex items-center gap-1.5">
+                <CalendarCheck className="w-3.5 h-3.5 text-primary" />
+                <span>Sổ Điểm Danh &amp; Chuyên Cần</span>
+              </span>
+              <span className="text-xs text-outline">• Niên khóa {activeClass?.academicYear || '2026 - 2027'}</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-on-surface font-sans">
+              Điểm danh lớp {activeClass?.name || 'Giáo Lý'}
+            </h1>
+            <p className="text-xs text-on-surface-variant">
+              Theo dõi và ghi nhận số ngày nghỉ, ngày vắng có phép hoặc không phép của các em học sinh trong năm học.
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={fetchClassAttendance}
+              disabled={isLoading}
+              className="px-3.5 py-2 rounded-xl border border-outline-variant/40 bg-surface hover:bg-surface-container-low text-on-surface-variant text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>Tải lại</span>
+            </button>
+
+            <button
+              onClick={handleSaveAll}
+              disabled={isSaving || isLoading}
+              className="px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+            >
+              <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
+              <span>{isSaving ? 'Đang lưu...' : hasUnsavedChanges ? 'Lưu thay đổi' : 'Lưu bảng điểm danh'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Harmonious Minimalist Stat Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-outline-variant/20">
+          {/* Card 1 */}
+          <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center font-semibold shrink-0">
+              <Users className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[11px] text-on-surface-variant font-medium">Tổng sĩ số</div>
+              <div className="text-base font-bold text-on-surface mt-0.5">{stats.totalStudents} <span className="text-xs font-normal text-outline">em</span></div>
+            </div>
+          </div>
+
+          {/* Card 2 */}
+          <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-surface-container text-emerald-700 flex items-center justify-center font-semibold shrink-0">
+              <UserCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[11px] text-on-surface-variant font-medium">Chuyên cần 100%</div>
+              <div className="text-base font-bold text-emerald-800 mt-0.5">{stats.fullAttendanceStudents} <span className="text-xs font-normal text-outline">em</span></div>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-surface-container text-amber-700 flex items-center justify-center font-semibold shrink-0">
+              <UserX className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[11px] text-on-surface-variant font-medium">Có vắng mặt</div>
+              <div className="text-base font-bold text-on-surface mt-0.5">{stats.absentStudents} <span className="text-xs font-normal text-outline">em</span></div>
+            </div>
+          </div>
+
+          {/* Card 4 */}
+          <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center font-semibold shrink-0">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[11px] text-on-surface-variant font-medium">Tổng ngày vắng</div>
+              <div className="text-base font-bold text-on-surface mt-0.5">{stats.totalAbsenceDays} <span className="text-xs font-normal text-outline">buổi</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Filter & Search Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        {/* Class Selector for Admin */}
+        {currentRole === 'admin' ? (
+          <div className="flex items-center gap-2 bg-surface-container-lowest px-3 py-2 rounded-xl border border-outline-variant/30 w-full sm:w-auto shadow-2xs">
+            <Filter className="w-4 h-4 text-on-surface-variant shrink-0" />
+            <span className="text-xs font-medium text-on-surface-variant shrink-0">Lớp:</span>
+            <select
+              value={selectedClassId}
+              onChange={(e) => setSelectedClassId(e.target.value)}
+              className="bg-transparent font-semibold text-xs text-primary outline-none cursor-pointer w-full sm:w-auto"
+            >
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.studentCount} học sinh)
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="text-xs text-on-surface-variant">
+            Danh sách học sinh lớp <span className="font-semibold text-on-surface">{activeClass?.name}</span> ({stats.totalStudents} em)
+          </div>
+        )}
+
+        {/* Search Input */}
+        <div className="relative w-full sm:w-72">
+          <Search className="w-3.5 h-3.5 text-outline absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tìm tên, tên thánh, mã học sinh..."
+            className="w-full pl-9 pr-7 py-2 bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-xs text-on-surface placeholder:text-outline outline-none focus:border-primary/60 transition-colors shadow-2xs"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-outline hover:text-on-surface"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Main Attendance Table with Sticky Scrolling (Giống Ảnh 1) */}
+      <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto relative max-h-[72vh]">
+          <table className="w-full text-left border-collapse text-xs">
+            {/* Table Header */}
+            <thead className="sticky top-0 z-30 bg-surface-container-low border-b border-outline-variant/30 text-on-surface font-semibold">
+              <tr>
+                {/* 1. STT (Sticky Left Column 1) */}
+                <th className="p-3 text-center w-12 sticky left-0 bg-surface-container-low z-40 border-r border-outline-variant/20">
+                  STT
+                </th>
+
+                {/* 2. Tên Thánh & Họ Và Tên (Sticky Left Column 2) */}
+                <th className="p-3 min-w-[220px] sticky left-12 bg-surface-container-low z-40 border-r border-outline-variant/20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                  TÊN THÁNH &amp; HỌ VÀ TÊN
+                </th>
+
+                {/* 3. Giới tính */}
+                <th className="p-3 text-center w-24">
+                  GIỚI TÍNH
+                </th>
+
+                {/* 4. Số ngày nghỉ */}
+                <th className="p-3 text-center w-36">
+                  SỐ NGÀY NGHỈ
+                </th>
+
+                {/* 5. Chi tiết các ngày nghỉ */}
+                <th className="p-3 min-w-[460px]">
+                  CHI TIẾT CÁC NGÀY NGHỈ (NGÀY, LOẠI PHÉP, BUỔI &amp; GHI CHÚ)
+                </th>
+
+                {/* 6. Thao tác */}
+                <th className="p-3 text-center w-24">
+                  THAO TÁC
+                </th>
+              </tr>
+            </thead>
+
+            {/* Table Body */}
+            <tbody className="divide-y divide-outline-variant/20 bg-surface-container-lowest">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="p-10 text-center text-on-surface-variant">
+                    <div className="flex items-center justify-center gap-2 text-xs">
+                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span>Đang tải danh sách học sinh &amp; dữ liệu điểm danh...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredStudentRows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-10 text-center text-on-surface-variant text-xs">
+                    Không tìm thấy học sinh nào phù hợp với từ khóa &quot;{searchQuery}&quot;
+                  </td>
+                </tr>
+              ) : (
+                filteredStudentRows.map((row, idx) => {
+                  const isFemale = row.gender === 'Nữ';
+
+                  return (
+                    <tr
+                      key={row.studentId}
+                      className={`hover:bg-surface-container-low/40 transition-colors ${
+                        row.isDirty ? 'bg-amber-50/30' : ''
+                      }`}
+                    >
+                      {/* Column 1: STT (Sticky) */}
+                      <td className="p-3 text-center font-medium text-outline sticky left-0 bg-surface-container-lowest group-hover:bg-surface-container-low/40 z-20 border-r border-outline-variant/20">
+                        {idx + 1}
+                      </td>
+
+                      {/* Column 2: Tên Thánh & Họ Và Tên (Sticky) */}
+                      <td className="p-3 sticky left-12 bg-surface-container-lowest group-hover:bg-surface-container-low/40 z-20 border-r border-outline-variant/20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                        <div className="flex items-center space-x-2.5">
+                          <GenderAvatar
+                            gender={row.gender}
+                            className="w-8 h-8 rounded-full ring-1 ring-outline-variant/30 shrink-0"
+                          />
+                          <div>
+                            <div className="font-semibold text-on-surface text-xs leading-snug">
+                              <span className="text-primary font-bold">{row.holyName}</span> {row.fullName}
+                            </div>
+                            <div className="text-[10px] text-outline font-mono">
+                              #{row.code}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Column 3: Giới tính */}
+                      <td className="p-3 text-center">
+                        <span
+                          className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${
+                            isFemale
+                              ? 'bg-rose-50/70 text-rose-700 border-rose-200/60'
+                              : 'bg-sky-50/70 text-sky-700 border-sky-200/60'
+                          }`}
+                        >
+                          {row.gender}
+                        </span>
+                      </td>
+
+                      {/* Column 4: Số ngày nghỉ */}
+                      <td className="p-3 text-center">
+                        <select
+                          value={row.absentCount}
+                          onChange={(e) => handleAbsentCountChange(row.studentId, parseInt(e.target.value, 10))}
+                          aria-label={`Số ngày nghỉ của em ${row.holyName} ${row.fullName}`}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-container-low border border-outline-variant/30 text-on-surface outline-none cursor-pointer hover:border-primary/40 focus:border-primary transition-colors"
+                        >
+                          {[...Array(16)].map((_, i) => (
+                            <option key={i} value={i}>
+                              {i === 0 ? '0 ngày (Đi đủ)' : `${i} ngày nghỉ`}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* Column 5: Chi tiết các ngày nghỉ */}
+                      <td className="p-3">
+                        {row.absentCount === 0 ? (
+                          <div className="text-on-surface-variant text-xs py-1 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span className="text-emerald-700 font-medium">Đi học đầy đủ</span>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {row.absences.map((abs, absIdx) => (
+                              <div
+                                key={absIdx}
+                                className="p-2 rounded-lg bg-surface-container-low/70 border border-outline-variant/25 flex flex-wrap items-center gap-2 text-xs"
+                              >
+                                <span className="font-semibold text-outline text-[11px] w-5 text-center shrink-0">
+                                  #{absIdx + 1}
+                                </span>
+
+                                {/* Ngày vắng */}
+                                <input
+                                  type="date"
+                                  value={abs.date}
+                                  onChange={(e) =>
+                                    handleAbsenceDetailChange(row.studentId, absIdx, 'date', e.target.value)
+                                  }
+                                  className="bg-surface-container-lowest px-2 py-1 rounded-md border border-outline-variant/30 text-xs text-on-surface outline-none focus:border-primary/60"
+                                />
+
+                                {/* Phân loại phép / không phép */}
+                                <select
+                                  value={abs.status}
+                                  onChange={(e) =>
+                                    handleAbsenceDetailChange(row.studentId, absIdx, 'status', e.target.value)
+                                  }
+                                  className={`px-2 py-1 rounded-md text-xs font-medium border outline-none cursor-pointer ${
+                                    abs.status === 'VANG_CO_PHEP'
+                                      ? 'bg-amber-50 text-amber-900 border-amber-200'
+                                      : 'bg-rose-50 text-rose-900 border-rose-200'
+                                  }`}
+                                >
+                                  <option value="VANG_CO_PHEP">Có phép</option>
+                                  <option value="VANG_KHONG_PHEP">Không phép</option>
+                                </select>
+
+                                {/* Loại buổi */}
+                                <select
+                                  value={abs.type}
+                                  onChange={(e) =>
+                                    handleAbsenceDetailChange(row.studentId, absIdx, 'type', e.target.value)
+                                  }
+                                  className="bg-surface-container-lowest px-2 py-1 rounded-md border border-outline-variant/30 text-xs text-on-surface outline-none cursor-pointer"
+                                >
+                                  <option value="LE_CHUA_NHAT">Thánh Lễ Chúa Nhật</option>
+                                  <option value="GIO_GIAO_LY">Giờ Học Giáo Lý</option>
+                                </select>
+
+                                {/* Ghi chú lý do */}
+                                <input
+                                  type="text"
+                                  value={abs.notes || ''}
+                                  onChange={(e) =>
+                                    handleAbsenceDetailChange(row.studentId, absIdx, 'notes', e.target.value)
+                                  }
+                                  placeholder="Lý do nghỉ..."
+                                  className="flex-1 min-w-[110px] bg-surface-container-lowest px-2 py-1 rounded-md border border-outline-variant/30 text-xs text-on-surface placeholder:text-outline outline-none focus:border-primary/60"
+                                />
+
+                                {/* Nút xóa ngày nghỉ này */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveAbsence(row.studentId, absIdx)}
+                                  title="Xóa ngày nghỉ này"
+                                  className="p-1 rounded text-outline hover:text-customError hover:bg-surface-container transition-colors cursor-pointer shrink-0"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+
+                            <button
+                              type="button"
+                              onClick={() => handleAddAbsenceQuick(row.studentId)}
+                              className="text-[11px] font-medium text-primary hover:underline flex items-center gap-1 cursor-pointer pt-0.5"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Thêm ngày nghỉ</span>
+                            </button>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Column 6: Thao tác / Lưu riêng */}
+                      <td className="p-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleSaveSingle(row.studentId)}
+                          disabled={!row.isDirty}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                            row.isDirty
+                              ? 'bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-2xs'
+                              : 'bg-surface-container-low text-outline cursor-default opacity-50'
+                          }`}
+                        >
+                          {row.isDirty ? 'Lưu' : 'Đã lưu'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};

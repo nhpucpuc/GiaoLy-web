@@ -1,0 +1,578 @@
+{
+  "info": {
+    "_postman_id": "gly-parish-api-collection-2026",
+    "name": "⛪ GLY - API Cổng Giáo Lý Sơn Lộc",
+    "description": "Bộ sưu tập Postman hoàn chỉnh để kiểm thử toàn bộ RESTful API của hệ thống Quản lý Giáo Lý Giáo Xứ Sơn Lộc (NestJS + PostgreSQL + Prisma ORM).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 1. Auth (Xác thực & Phân quyền)",
+      "item": [
+        {
+          "name": "Đăng nhập Admin (Tự động lưu Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.accessToken) {",
+                  "        pm.collectionVariables.set('jwt_token', res.accessToken);",
+                  "        console.log('✅ Đã tự động lưu JWT Token vào biến môi trường!');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin.giaoly@gxsonloc.vn\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Đăng nhập với vai trò Admin (Ban Quản Trị Giáo Lý). Sau khi bấm Send, Token sẽ tự động được gán vào các request khác."
+          }
+        },
+        {
+          "name": "Đăng nhập Giáo Lý Viên (Tự động lưu Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.accessToken) {",
+                  "        pm.collectionVariables.set('jwt_token', res.accessToken);",
+                  "        console.log('✅ Đã lưu JWT Token của GLV!');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"tuyetmai.glv@gxsonloc.vn\",\n  \"password\": \"glv123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Đăng nhập với vai trò Giáo Lý Viên."
+          }
+        },
+        {
+          "name": "Đăng nhập Phụ Huynh (Tự động lưu Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var res = pm.response.json();",
+                  "    if (res.accessToken) {",
+                  "        pm.collectionVariables.set('jwt_token', res.accessToken);",
+                  "        console.log('✅ Đã lưu JWT Token của Phụ Huynh!');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hung.nguyen@gmail.com\",\n  \"password\": \"parent123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Đăng nhập với vai trò Phụ Huynh."
+          }
+        },
+        {
+          "name": "Lấy thông tin tài khoản hiện tại (Profile)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "profile"]
+            },
+            "description": "Lấy thông tin user hiện tại bằng Bearer Token."
+          }
+        },
+        {
+          "name": "Đăng ký tài khoản mới",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"glv.nam@gxsonloc.vn\",\n  \"password\": \"password123\",\n  \"fullName\": \"Nguyễn Thành Nam\",\n  \"holyName\": \"Phêrô\",\n  \"role\": \"CATECHIST\",\n  \"phone\": \"0918 888 999\",\n  \"assignedClassId\": \"cls-vd1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏫 2. Classes (Quản lý Lớp học)",
+      "item": [
+        {
+          "name": "Lấy danh sách tất cả lớp học",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/classes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "classes"]
+            },
+            "description": "Trả về danh sách 25 lớp kèm sĩ số học sinh tự động tính."
+          }
+        },
+        {
+          "name": "Lọc lớp theo Ca Sáng (session=SANG)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/classes?session=SANG",
+              "host": ["{{base_url}}"],
+              "path": ["api", "classes"],
+              "query": [
+                {
+                  "key": "session",
+                  "value": "SANG"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Lọc lớp theo Ca Tối (session=TOI)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/classes?session=TOI",
+              "host": ["{{base_url}}"],
+              "path": ["api", "classes"],
+              "query": [
+                {
+                  "key": "session",
+                  "value": "TOI"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Lấy chi tiết 1 lớp học (cls-kt1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/classes/cls-kt1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "classes", "cls-kt1"]
+            },
+            "description": "Lấy thông tin lớp học kèm danh sách học sinh và điểm số của lớp."
+          }
+        },
+        {
+          "name": "Tạo lớp học mới (Admin Only)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bao Đồng 2\",\n  \"category\": \"BAO_DONG\",\n  \"catechistLeader\": \"Giuse Nguyễn Văn Tuấn\",\n  \"catechistAssists\": [\"Maria Trần Thị Hạnh\"],\n  \"roomNumber\": \"Phòng 303 - Nhà Mục Vụ\",\n  \"academicYear\": \"2025 - 2026\",\n  \"schedule\": \"Chúa Nhật | 19:00 - 20:15 (Tối)\",\n  \"session\": \"TOI\",\n  \"description\": \"Lớp Bao Đồng năm thứ 2 trưởng thành trong đức tin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/classes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "classes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👦 3. Students (Học sinh & Bí tích)",
+      "item": [
+        {
+          "name": "Lấy danh sách tất cả học sinh",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students"]
+            }
+          }
+        },
+        {
+          "name": "Lọc học sinh theo lớp (classId=cls-kt1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/students?classId=cls-kt1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students"],
+              "query": [
+                {
+                  "key": "classId",
+                  "value": "cls-kt1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tìm kiếm học sinh theo Tên hoặc SĐT",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/students?search=Mai%20Lan",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Mai Lan"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Lấy chi tiết hồ sơ & học bạ học sinh (std-001)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/students/std-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students", "std-001"]
+            },
+            "description": "Lấy chi tiết hồ sơ học sinh, điểm số các kỳ, chuyên cần và ngày nhận các Bí tích."
+          }
+        },
+        {
+          "name": "Thêm học sinh mới vào lớp (Admin/GLV)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"holyName\": \"Maria\",\n  \"fullName\": \"Vũ Thu Thảo\",\n  \"gender\": \"Nữ\",\n  \"dob\": \"2016-10-25\",\n  \"baptismDate\": \"2016-11-15\",\n  \"baptismPlace\": \"GX Sơn Lộc\",\n  \"classId\": \"cls-kt1\",\n  \"parentName\": \"Giuse Vũ Văn Hùng\",\n  \"parentPhone\": \"0987 654 321\",\n  \"address\": \"Số 56 Đường Hùng Vương, Sơn Tây\",\n  \"status\": \"DANG_HOC\",\n  \"notes\": \"Học sinh mới chuyển về xứ đoàn\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students"]
+            }
+          }
+        },
+        {
+          "name": "Cập nhật hồ sơ & Lời phê học sinh (Admin/GLV)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Em học tập rất chăm chỉ, hăng hái tham gia dọn bàn thờ và phụng vụ.\",\n  \"parentPhone\": \"0912 345 999\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/students/std-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "students", "std-001"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 4. Grades (Bảng điểm & Xếp hạng)",
+      "item": [
+        {
+          "name": "Lấy bảng điểm của cả lớp (cls-kt1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/grades/class/cls-kt1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "grades", "class", "cls-kt1"]
+            },
+            "description": "Lấy toàn bộ cột điểm HK1, HK2, ĐTB Cả năm, Hạng 1-4, Kết quả lên lớp của toàn bộ học sinh trong lớp."
+          }
+        },
+        {
+          "name": "Lưu bảng điểm hàng loạt theo công thức chuẩn (Batch Update)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"cls-kt1\",\n  \"grades\": [\n    {\n      \"studentId\": \"std-001\",\n      \"hk1_tx1\": 9.0,\n      \"hk1_tx2\": 9.5,\n      \"hk1_thi\": 9.5,\n      \"hk2_tx1\": 9.0,\n      \"hk2_tx2\": 9.5,\n      \"hk2_thi\": 10.0,\n      \"notes\": \"Học sinh xuất sắc nhất khối\"\n    },\n    {\n      \"studentId\": \"std-002\",\n      \"hk1_tx1\": 8.0,\n      \"hk1_tx2\": 8.5,\n      \"hk1_thi\": 8.5,\n      \"hk2_tx1\": 8.0,\n      \"hk2_tx2\": 8.5,\n      \"hk2_thi\": 8.5,\n      \"notes\": \"Học đều, chăm chỉ\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/grades/batch-update",
+              "host": ["{{base_url}}"],
+              "path": ["api", "grades", "batch-update"]
+            },
+            "description": "Cập nhật điểm hàng loạt. Hệ thống tự động tính TB HK1, TB HK2, TB Cả Năm và tự động xếp Hạng 1, 2, 3..."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 5. Attendance (Chuyên cần)",
+      "item": [
+        {
+          "name": "Lấy lịch sử chuyên cần của học sinh (std-001)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/attendance/student/std-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attendance", "student", "std-001"]
+            }
+          }
+        },
+        {
+          "name": "Điểm danh chuyên cần (Admin/GLV)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"std-001\",\n  \"date\": \"2026-08-30\",\n  \"type\": \"LE_CHUA_NHAT\",\n  \"status\": \"CO_MAT\",\n  \"notes\": \"Đi lễ đúng giờ\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/attendance/mark",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attendance", "mark"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📢 6. Announcements (Thông báo)",
+      "item": [
+        {
+          "name": "Lấy danh sách tất cả thông báo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/announcements",
+              "host": ["{{base_url}}"],
+              "path": ["api", "announcements"]
+            }
+          }
+        },
+        {
+          "name": "Lọc thông báo dành cho Phụ Huynh",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/announcements?audience=Ph%E1%BB%A5%20Huynh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "announcements"],
+              "query": [
+                {
+                  "key": "audience",
+                  "value": "Phụ Huynh"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Đăng thông báo mới (Admin Only)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Thông báo Lễ Ra Mắt Ban Huynh Trưởng Niên Khóa Mới\",\n  \"content\": \"Kính mời quý Phụ Huynh và các em tham dự Thánh Lễ lúc 07:00 Chúa Nhật tới.\",\n  \"author\": \"Trưởng Ban Giáo Lý\",\n  \"targetAudience\": \"Tất cả\",\n  \"type\": \"event\",\n  \"date\": \"2026-08-28\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/announcements",
+              "host": ["{{base_url}}"],
+              "path": ["api", "announcements"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

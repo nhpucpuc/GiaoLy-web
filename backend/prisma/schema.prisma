@@ -1,0 +1,194 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. Phân quyền Người dùng
+enum UserRole {
+  ADMIN       // Ban Điều Hành / Trưởng Ban Giáo Lý
+  CATECHIST   // Giáo Lý Viên
+  PARENT      // Phụ Huynh
+}
+
+model User {
+  id               String       @id @default(uuid())
+  email            String       @unique
+  password         String       // Hash bcrypt
+  rawPassword      String?      @default("glv123") // Mật khẩu hiển thị cho Admin quản trị
+  fullName         String
+  holyName         String?      // Tên Thánh (Maria, Giuse, Phêrô...)
+  role             UserRole     @default(PARENT)
+  phone            String?
+  avatar           String?
+  assignedClassId  String?      // Lớp GLV phụ trách chính (nếu là CATECHIST)
+  assignedClass    ClassRoom?   @relation("ClassLeader", fields: [assignedClassId], references: [id])
+  children         Student[]    @relation("ParentStudents")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+// 2. Lớp Học Giáo Lý
+enum ClassCategory {
+  KHAI_TAM   // Khai Tâm
+  XUNG_TOI   // Xưng Tội (1A, 1B, 2A, 2B...)
+  RUOC_LE    // Rước Lễ
+  THEM_SUC   // Thêm Sức (1A, 1B, 2A, 2B, 3A, 3B...)
+  BAO_DONG   // Bao Đồng (1A, 1B, 2A, 2B, 3A, 3B...)
+  VAO_DOI    // Vào Đời (1, 2...)
+}
+
+enum SessionType {
+  SANG  // Ca Sáng Chúa Nhật
+  TOI   // Ca Tối Chúa Nhật
+}
+
+model ClassRoom {
+  id               String         @id @default(uuid())
+  name             String         // VD: Khai Tâm 1A, Xưng Tội 1A, Thêm Sức 2B...
+  category         ClassCategory  @default(KHAI_TAM)
+  catechistLeader  String         // Tên GLV phụ trách chính hiển thị
+  catechistAssists String[]       // Danh sách GLV phụ tá
+  roomNumber       String?        // Phòng 101 - Nhà Mục Vụ
+  academicYear     String         @default("2026 - 2027")
+  schedule         String         @default("Chúa Nhật | 07:30 - 08:45")
+  session          SessionType    @default(SANG)
+  description      String?
+  
+  // Quan hệ
+  leaderUser       User[]         @relation("ClassLeader")
+  students         Student[]
+  gradeRecords     GradeRecord[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+// 3. Hồ sơ Học Sinh & Bí Tích
+enum StudentStatus {
+  DANG_HOC     // Đang học
+  NGHI_HOC     // Nghỉ học
+  CHUYEN_XU    // Chuyển xứ
+}
+
+model Student {
+  id                  String         @id @default(uuid())
+  code                String?        @unique // Mã định danh 5 chữ số duy nhất (VD: 10001, 10002...)
+  holyName            String         // Tên Thánh (Maria, Giuse...)
+  fullName            String         // Họ và tên
+  gender              String         // Nam / Nữ
+  dob                 String         // Ngày sinh: YYYY-MM-DD
+  pob                 String?        // Nơi sinh
+  parishSubdivision   String?        // Giáo khu (Mẹ Lên Trời, Mẹ Thiên Chúa, Mân Côi...)
+  address             String         // Chỗ ở hiện tại
+  
+  // Hồ sơ Bí Tích
+  baptismDate         String?        // Ngày Rửa Tội
+  baptismPlace        String?        // Nơi Rửa Tội
+  eucharistDate       String?        // Ngày Rước Lễ Lần Đầu
+  eucharistPlace      String?        // Nơi Rước Lễ Lần Đầu
+  confirmationDate    String?        // Ngày Thêm Sức
+  confirmationPlace   String?        // Nơi Thêm Sức
+  solemnCommunionDate String?        // Ngày Rước Lễ Bao Đồng
+  solemnCommunionPlace String?       // Nơi Rước Lễ Bao Đồng
+  
+  classId             String
+  class               ClassRoom      @relation(fields: [classId], references: [id], onDelete: Cascade)
+  
+  // Thông tin Phụ Huynh & Gia đình
+  parentName          String         // Họ tên phụ huynh đại diện
+  parentPhone         String         // Số điện thoại liên lạc
+  fatherHolyName      String?        // Tên Thánh Cha
+  fatherName          String?        // Họ và tên Cha
+  fatherPhone         String?        // SĐT Cha
+  motherHolyName      String?        // Tên Thánh Mẹ
+  motherName          String?        // Họ và tên Mẹ
+  motherPhone         String?        // SĐT Mẹ
+  
+  parentId            String?
+  parent              User?          @relation("ParentStudents", fields: [parentId], references: [id])
+  
+  status              StudentStatus  @default(DANG_HOC)
+  avatar              String?
+  notes               String?
+  
+  // Quan hệ
+  grades              GradeRecord[]
+  attendance          Attendance[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+// 4. Bảng Điểm Học Kỳ & Cả Năm
+model GradeRecord {
+  id               String       @id @default(uuid())
+  studentId        String
+  student          Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classId          String
+  class            ClassRoom    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  academicYear     String       @default("2026 - 2027")
+  
+  // Học Kỳ 1 (Hệ số: TX1:1, TX2:1, Thi:2)
+  hk1_tx1          Float?
+  hk1_tx2          Float?
+  hk1_thi          Float?
+  hk1_tb           Float?       // Tự động tính: ((tx1 + tx2)/2 + thi) / 2
+  hk1_rank         Int?
+  
+  // Học Kỳ 2
+  hk2_tx1          Float?
+  hk2_tx2          Float?
+  hk2_thi          Float?
+  hk2_tb           Float?       // Tự động tính: ((tx1 + tx2)/2 + thi) / 2
+  hk2_rank         Int?
+  
+  // Tổng kết Cả Năm
+  tb_cn            Float?       // (hk1_tb + hk2_tb) / 2
+  cn_rank          Int?         // Xếp hạng Cả Năm
+  result           String?      // 'Lên lớp' | 'Chưa đạt'
+  conduct          String?      // 'Xuất sắc' | 'Giỏi' | 'Khá' | 'Trung bình'
+  notes            String?      // Lời phê của Giáo Lý Viên
+  
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([studentId, classId, academicYear])
+}
+
+// 5. Điểm Danh Chuyên Cần
+enum AttendanceType {
+  LE_CHUA_NHAT    // Thánh Lễ Chúa Nhật
+  GIO_GIAO_LY     // Giờ Học Giáo Lý
+}
+
+enum AttendanceStatus {
+  CO_MAT          // Có mặt
+  VANG_CO_PHEP    // Vắng có phép
+  VANG_KHONG_PHEP // Vắng không phép
+}
+
+model Attendance {
+  id          String            @id @default(uuid())
+  studentId   String
+  student     Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date        String            // YYYY-MM-DD
+  type        AttendanceType    @default(LE_CHUA_NHAT)
+  status      AttendanceStatus  @default(CO_MAT)
+  notes       String?
+  createdAt   DateTime          @default(now())
+}
+
+// 6. Thông Báo Xứ Đoàn
+model Announcement {
+  id              String       @id @default(uuid())
+  title           String
+  content         String
+  author          String
+  targetAudience  String       // Tất cả, Ban Giáo Lý, Giáo Lý Viên, Phụ Huynh
+  type            String       // event, notice, exam, urgent
+  date            String
+  createdAt       DateTime     @default(now())
+}
