@@ -104,11 +104,11 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-6">
+          {/* Navigation Links (Right Aligned) */}
+          <nav className="flex items-center gap-4 sm:gap-7">
             <button
               onClick={() => handleSwitchTab('home')}
-              className={`font-bold text-sm md:text-base pb-1 transition-all cursor-pointer ${
+              className={`font-bold text-xs sm:text-base pb-1 transition-all cursor-pointer ${
                 activeHeroTab === 'home'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-on-surface-variant hover:text-primary'
@@ -117,7 +117,7 @@ export const LandingPage: React.FC = () => {
               Trang chủ
             </button>
             <a
-              className="text-on-surface-variant text-sm md:text-base transition-colors duration-200 hover:text-primary"
+              className="text-on-surface-variant font-medium text-xs sm:text-base transition-colors duration-200 hover:text-primary pb-1"
               href="#tra-cuu"
               onClick={() => {
                 if (activeHeroTab === 'about') setActiveHeroTab('home');
@@ -127,7 +127,7 @@ export const LandingPage: React.FC = () => {
             </a>
             <button
               onClick={() => handleSwitchTab('about')}
-              className={`font-bold text-sm md:text-base pb-1 transition-all cursor-pointer ${
+              className={`font-bold text-xs sm:text-base pb-1 transition-all cursor-pointer ${
                 activeHeroTab === 'about'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-on-surface-variant hover:text-primary'
@@ -136,22 +136,6 @@ export const LandingPage: React.FC = () => {
               Giới thiệu
             </button>
           </nav>
-
-          {/* Mobile & Desktop Right Quick Login */}
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => handleOpenLogin('catechist')}
-              className="bg-primary text-white text-xs sm:text-sm px-4 py-2 rounded-full font-bold shadow-xs hover:bg-primary/90 transition-all cursor-pointer"
-            >
-              Đăng nhập GLV
-            </button>
-            <button
-              onClick={() => handleOpenLogin('admin')}
-              className="hidden sm:inline-flex bg-surface-container-high text-primary text-xs sm:text-sm px-4 py-2 rounded-full font-bold border border-primary/20 hover:bg-surface-container transition-all cursor-pointer"
-            >
-              Admin
-            </button>
-          </div>
         </div>
       </header>
 
