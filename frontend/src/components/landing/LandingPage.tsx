@@ -108,21 +108,19 @@ export const LandingPage: React.FC = () => {
           <nav className="flex items-center gap-4 sm:gap-7">
             <button
               onClick={() => handleSwitchTab('home')}
-              className={`font-bold text-xs sm:text-base pb-1 transition-all cursor-pointer ${
-                activeHeroTab === 'home'
+              className={`font-bold text-xs sm:text-base pb-1 transition-all cursor-pointer ${activeHeroTab === 'home'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-on-surface-variant hover:text-primary'
-              }`}
+                }`}
             >
               Trang chủ
             </button>
             <button
               onClick={() => handleSwitchTab('about')}
-              className={`font-bold text-xs sm:text-base pb-1 transition-all cursor-pointer ${
-                activeHeroTab === 'about'
+              className={`font-bold text-xs sm:text-base pb-1 transition-all cursor-pointer ${activeHeroTab === 'about'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-on-surface-variant hover:text-primary'
-              }`}
+                }`}
             >
               Giới thiệu
             </button>
@@ -150,17 +148,17 @@ export const LandingPage: React.FC = () => {
             <div className="grid grid-cols-1 items-center w-full">
               {/* ================= 1. GIAO DIỆN TRANG CHỦ (HERO VIEW) ================= */}
               <div
-                className={`col-start-1 row-start-1 w-full transition-all duration-500 ease-in-out transform ${
-                  activeHeroTab === 'home'
+                className={`col-start-1 row-start-1 w-full transition-all duration-500 ease-in-out transform ${activeHeroTab === 'home'
                     ? 'opacity-100 translate-x-0 scale-100 pointer-events-auto'
                     : 'opacity-0 -translate-x-10 scale-[0.97] pointer-events-none'
-                }`}
+                  }`}
               >
                 <div className="flex flex-col lg:flex-row items-center gap-10">
                   {/* Text Content */}
                   <div className="w-full lg:w-1/2 flex flex-col text-center lg:text-left gap-6 sm:gap-7 lg:gap-8">
-                    <h1 className="font-extrabold text-[#005d6c] text-3xl sm:text-4xl lg:text-[2.75rem] xl:text-5xl leading-snug sm:leading-snug lg:leading-[1.2] font-sans tracking-tight">
-                      Nơi kết nối phụ huynh và các em với giáo lý viên
+                    <h1 className="font-extrabold text-[#005d6c] text-3xl sm:text-4xl lg:text-[2.6rem] xl:text-[2.85rem] font-sans flex flex-col gap-3.5 sm:gap-4 lg:gap-5 leading-normal">
+                      <span>Nơi kết nối phụ huynh</span>
+                      <span>và các em với giáo lý viên</span>
                     </h1>
                     <p className="text-base sm:text-lg text-[#005d6c]/90 max-w-2xl mx-auto lg:mx-0 bg-white/70 p-5 sm:p-6 rounded-2xl backdrop-blur-sm shadow-sm font-body leading-relaxed border border-white/60">
                       Nền tảng quản trị thông tin học sinh, sổ điểm, điểm danh và kết nối phụ huynh Ban Giáo Lý Giáo Xứ Sơn Lộc.
@@ -196,11 +194,10 @@ export const LandingPage: React.FC = () => {
 
               {/* ================= 2. GIAO DIỆN GIỚI THIỆU (ABOUT VIEW) ================= */}
               <div
-                className={`col-start-1 row-start-1 w-full transition-all duration-500 ease-in-out transform ${
-                  activeHeroTab === 'about'
+                className={`col-start-1 row-start-1 w-full transition-all duration-500 ease-in-out transform ${activeHeroTab === 'about'
                     ? 'opacity-100 translate-x-0 scale-100 pointer-events-auto'
                     : 'opacity-0 translate-x-10 scale-[0.97] pointer-events-none'
-                }`}
+                  }`}
               >
                 <div className="max-w-4xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl p-6 sm:p-10 border border-white/80 shadow-2xl space-y-6">
                   {/* Header Card */}
