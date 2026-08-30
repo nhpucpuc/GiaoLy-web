@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { FileSpreadsheet, Save, CheckCircle2, ArrowDownAZ, Filter, BookOpen } from 'lucide-react';
+import { FileSpreadsheet, Save, CheckCircle2, ArrowDownAZ, Filter, BookOpen, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useApp } from '../../context/AppContext';
 import { getFullCatechistNames } from '../../utils/catechistHelper';
@@ -35,8 +35,8 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
   const currentClass = classes.find((c) => c.id === targetClassId) || classes.find((c) => c.id === selectedClassId) || classes[0];
   const classStudents = currentClass ? students.filter((s) => s.classId === currentClass.id) : [];
 
-  // Chế độ Lọc danh sách: 'ALL' (A-Z), 'TOP_4' (Top 4 điểm cao nhất)
-  const [filterMode, setFilterMode] = useState<'ALL' | 'TOP_4'>('ALL');
+  // Chế độ Lọc danh sách: 'ALL' (A-Z), 'TOP_4' (Top 4 điểm cao nhất), 'NOT_PASSED' (Chưa đạt < 5.0)
+  const [filterMode, setFilterMode] = useState<'ALL' | 'TOP_4' | 'NOT_PASSED'>('ALL');
 
   // Load from database grades
   const [gradeState, setGradeState] = useState<Record<string, SemesterGradeRecord>>({});
@@ -164,6 +164,14 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
     return uniqueSorted.slice(0, 4);
   }, [allCalculatedData]);
 
+  // Đếm số lượng học sinh chưa đạt (Điểm TB < 5.0)
+  const notPassedCount = useMemo(() => {
+    return allCalculatedData.filter((row) => {
+      const score = row.tb_cn !== null ? row.tb_cn : row.hk1_tb;
+      return score !== null && score < 5.0;
+    }).length;
+  }, [allCalculatedData]);
+
   // Danh sách hiển thị theo bộ lọc
   const displayedData = useMemo(() => {
     if (filterMode === 'TOP_4') {
@@ -179,6 +187,20 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
           const scoreA = a.tb_cn !== null ? a.tb_cn : a.hk1_tb ?? -1;
           const scoreB = b.tb_cn !== null ? b.tb_cn : b.hk1_tb ?? -1;
           if (scoreB !== scoreA) return scoreB - scoreA;
+          return a.student.fullName.localeCompare(b.student.fullName);
+        });
+    }
+
+    if (filterMode === 'NOT_PASSED') {
+      return allCalculatedData
+        .filter((row) => {
+          const score = row.tb_cn !== null ? row.tb_cn : row.hk1_tb;
+          return score !== null && score < 5.0;
+        })
+        .sort((a, b) => {
+          const scoreA = a.tb_cn !== null ? a.tb_cn : a.hk1_tb ?? 0;
+          const scoreB = b.tb_cn !== null ? b.tb_cn : b.hk1_tb ?? 0;
+          if (scoreA !== scoreB) return scoreA - scoreB;
           return a.student.fullName.localeCompare(b.student.fullName);
         });
     }
@@ -404,7 +426,7 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
         </div>
       </div>
 
-      {/* Filter / Sắp xếp Toolbar (Theo Tên vs Lọc Top 4 Điểm Cao Nhất) */}
+      {/* Filter / Sắp xếp Toolbar (Theo Tên vs Lọc Top 4 Điểm Cao Nhất vs Lọc Chưa Đạt) */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 bg-surface-container-lowest p-3.5 rounded-2xl border border-outline-variant/30 shadow-xs">
         <div className="flex items-center gap-2 text-xs">
           <Filter className="w-4 h-4 text-primary" />
@@ -412,7 +434,7 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <div className="flex items-center space-x-1.5 bg-surface-container-low p-1 rounded-xl border border-outline-variant/30 text-xs">
+          <div className="flex flex-wrap items-center gap-1.5 bg-surface-container-low p-1 rounded-xl border border-outline-variant/30 text-xs">
             <button
               onClick={() => setFilterMode('ALL')}
               className={`px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -435,6 +457,18 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
             >
               <span>Lọc Top 4 điểm cao nhất</span>
             </button>
+
+            <button
+              onClick={() => setFilterMode('NOT_PASSED')}
+              className={`px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                filterMode === 'NOT_PASSED'
+                  ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-600/30'
+                  : 'text-rose-700 hover:text-rose-900 hover:bg-rose-50'
+              }`}
+            >
+              <AlertCircle className={`w-4 h-4 ${filterMode === 'NOT_PASSED' ? 'text-white' : 'text-rose-600'}`} />
+              <span>Học sinh chưa đạt ({notPassedCount})</span>
+            </button>
           </div>
         </div>
       </div>
@@ -454,9 +488,47 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
               )}
             </span>
           </div>
-          <span className="text-on-surface-variant text-[11px] font-bold">
-            Hiển thị: <strong className="text-primary">{displayedData.length}</strong> / {classStudents.length} học sinh
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-on-surface-variant text-[11px] font-bold">
+              Hiển thị: <strong className="text-primary">{displayedData.length}</strong> / {classStudents.length} học sinh
+            </span>
+            <button
+              onClick={() => setFilterMode('ALL')}
+              className="text-primary hover:underline font-bold cursor-pointer text-xs"
+            >
+              Bỏ lọc
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Not Passed Active Filter Notification Banner */}
+      {filterMode === 'NOT_PASSED' && (
+        <div className="mb-4 p-3 bg-rose-50 text-rose-950 border border-rose-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-medium animate-fadeIn shadow-2xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>
+              Đang lọc danh sách <strong>học sinh chưa đạt (Điểm TB &lt; 5.0)</strong>:{' '}
+              {notPassedCount > 0 ? (
+                <span>
+                  Tìm thấy <strong className="text-rose-700 font-black">{notPassedCount}</strong> học sinh cần bồi dưỡng thêm.
+                </span>
+              ) : (
+                <span className="text-emerald-700 font-semibold">Tất cả học sinh trong lớp đều đạt điểm từ 5.0 trở lên! 🎉</span>
+              )}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-rose-800 text-[11px] font-bold">
+              Hiển thị: <strong className="text-rose-700">{displayedData.length}</strong> / {classStudents.length} học sinh
+            </span>
+            <button
+              onClick={() => setFilterMode('ALL')}
+              className="text-primary hover:underline font-bold cursor-pointer text-xs"
+            >
+              Bỏ lọc (Xem tất cả)
+            </button>
+          </div>
         </div>
       )}
 
@@ -560,7 +632,14 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
               {displayedData.length === 0 ? (
                 <tr>
                   <td colSpan={filterMode === 'TOP_4' ? 13 : 12} className="p-8 text-center text-on-surface-variant">
-                    Không tìm thấy học sinh nào phù hợp với bộ lọc hiện tại.
+                    {filterMode === 'NOT_PASSED' ? (
+                      <div className="flex flex-col items-center justify-center gap-1.5 text-emerald-700 font-medium">
+                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                        <span>Không có học sinh nào chưa đạt trong lớp. Tất cả học sinh đều đạt điểm &ge; 5.0!</span>
+                      </div>
+                    ) : (
+                      'Không tìm thấy học sinh nào phù hợp với bộ lọc hiện tại.'
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -792,6 +871,11 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
               <>
                 Đang hiển thị <strong className="text-primary font-bold">{displayedData.length}</strong> học sinh thuộc{' '}
                 <strong>Top 4 con điểm cao nhất</strong> / Tổng số {classStudents.length} học sinh
+              </>
+            ) : filterMode === 'NOT_PASSED' ? (
+              <>
+                Đang hiển thị <strong className="text-rose-700 font-bold">{displayedData.length}</strong> học sinh{' '}
+                <strong>chưa đạt (Điểm TB &lt; 5.0)</strong> / Tổng số {classStudents.length} học sinh
               </>
             ) : (
               <>
