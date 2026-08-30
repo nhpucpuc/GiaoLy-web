@@ -116,15 +116,6 @@ export const LandingPage: React.FC = () => {
             >
               Trang chủ
             </button>
-            <a
-              className="text-on-surface-variant font-medium text-xs sm:text-base transition-colors duration-200 hover:text-primary pb-1"
-              href="#tra-cuu"
-              onClick={() => {
-                if (activeHeroTab === 'about') setActiveHeroTab('home');
-              }}
-            >
-              Tra cứu phụ huynh
-            </a>
             <button
               onClick={() => handleSwitchTab('about')}
               className={`font-bold text-xs sm:text-base pb-1 transition-all cursor-pointer ${
@@ -343,15 +334,6 @@ export const LandingPage: React.FC = () => {
               >
                 Trang chủ
               </button>
-              <a
-                className="text-xs text-[#45575c]/80 hover:text-primary transition-colors"
-                href="#tra-cuu"
-                onClick={() => {
-                  if (activeHeroTab === 'about') setActiveHeroTab('home');
-                }}
-              >
-                Tra cứu phụ huynh
-              </a>
               <button
                 onClick={() => handleSwitchTab('about')}
                 className="text-left text-xs text-[#45575c]/80 hover:text-primary transition-colors cursor-pointer"
