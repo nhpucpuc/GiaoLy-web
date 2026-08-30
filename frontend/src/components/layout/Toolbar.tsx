@@ -5,7 +5,9 @@ import {
   Filter,
   Calendar,
   LogOut,
-  Lock
+  Lock,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { GenderAvatar } from '../shared/GenderAvatar';
@@ -24,7 +26,9 @@ export const Toolbar: React.FC = () => {
     availableAcademicYears,
     setSelectedAcademicYear,
     announcements,
-    switchRole
+    switchRole,
+    isSidebarCollapsed,
+    toggleSidebar
   } = useApp();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -62,9 +66,27 @@ export const Toolbar: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-surface-container-lowest border-b border-outline-variant/30 px-6 flex items-center justify-between sticky top-0 z-20 transition-all">
-      {/* Left: Title & Quick class selector if needed */}
-      <div className="flex items-center space-x-4">
+    <header className="h-16 bg-surface-container-lowest border-b border-outline-variant/30 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 transition-all">
+      {/* Left: Sidebar Toggle & Title & Quick class selector if needed */}
+      <div className="flex items-center space-x-3 sm:space-x-4">
+        {/* Nút Ẩn / Hiện Thanh Menu Sidebar */}
+        <button
+          onClick={toggleSidebar}
+          title={isSidebarCollapsed ? "Hiện thanh menu điều hướng" : "Ẩn thanh menu điều hướng"}
+          className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+            isSidebarCollapsed
+              ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20 shadow-xs'
+              : 'border-outline-variant/40 text-on-surface-variant hover:text-primary hover:bg-surface-container hover:border-outline-variant'
+          }`}
+          aria-label={isSidebarCollapsed ? "Mở menu" : "Thu gọn menu"}
+        >
+          {isSidebarCollapsed ? (
+            <PanelLeftOpen className="w-5 h-5" />
+          ) : (
+            <PanelLeftClose className="w-5 h-5" />
+          )}
+        </button>
+
         <div>
           <h2 className="text-base font-bold text-on-surface leading-tight font-sans">
             {getPageTitle()}

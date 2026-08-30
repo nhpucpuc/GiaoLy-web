@@ -55,6 +55,9 @@ interface AppContextType {
     sem: number,
     att: number
   ) => { finalScore: number; conduct: ConductType };
+  isSidebarCollapsed: boolean;
+  setIsSidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  toggleSidebar: () => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   isBackendConnected: boolean;
@@ -101,6 +104,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       sessionStorage.removeItem('gx_selected_student_id');
     }
   };
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('gx_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('gx_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('2026 - 2027');
   const [availableAcademicYears, setAvailableAcademicYears] = useState<string[]>(['2026 - 2027']);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -456,6 +477,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         changePassword,
         createAnnouncement,
         calculateFinalGrade,
+        isSidebarCollapsed,
+        setIsSidebarCollapsed,
+        toggleSidebar,
         searchQuery,
         setSearchQuery,
         isBackendConnected,

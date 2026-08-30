@@ -18,7 +18,7 @@ import { ChangePasswordModal } from '../shared/ChangePasswordModal';
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
-  const { currentRole, switchRole } = useApp();
+  const { currentRole, switchRole, isSidebarCollapsed } = useApp();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const getRoleLabel = () => {
@@ -43,20 +43,27 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
-      <aside className="w-64 bg-surface-container-low border-r border-outline-variant/30 flex flex-col h-full shrink-0 select-none">
-        {/* Brand Header */}
-        <div className="p-4 border-b border-outline-variant/30 flex items-center space-x-3 bg-surface">
-          <img
-            src="/logo.png"
-            alt="Logo Giáo Lý Viên Giáo Xứ Sơn Lộc"
-            className="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-primary/20 shrink-0"
-          />
-          <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary truncate block">GX Sơn Lộc</span>
-            <h2 className="text-sm font-bold text-on-surface truncate font-sans">{roleInfo.title}</h2>
-            <p className="text-[11px] text-on-surface-variant truncate">{roleInfo.subtitle}</p>
+      <aside
+        className={`bg-surface-container-low border-r border-outline-variant/30 flex flex-col h-full shrink-0 select-none transition-all duration-300 ease-in-out relative z-30 ${
+          isSidebarCollapsed
+            ? 'w-0 -translate-x-full overflow-hidden border-r-0 opacity-0 pointer-events-none'
+            : 'w-64 translate-x-0 opacity-100'
+        }`}
+      >
+        <div className="w-64 flex flex-col h-full">
+          {/* Brand Header */}
+          <div className="p-4 border-b border-outline-variant/30 flex items-center space-x-3 bg-surface">
+            <img
+              src="/logo.png"
+              alt="Logo Giáo Lý Viên Giáo Xứ Sơn Lộc"
+              className="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-primary/20 shrink-0"
+            />
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary truncate block">GX Sơn Lộc</span>
+              <h2 className="text-sm font-bold text-on-surface truncate font-sans">{roleInfo.title}</h2>
+              <p className="text-[11px] text-on-surface-variant truncate">{roleInfo.subtitle}</p>
+            </div>
           </div>
-        </div>
 
         {/* Navigation Menu Links */}
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
@@ -249,6 +256,7 @@ export const Sidebar: React.FC = () => {
             <LogOut className="w-4 h-4" />
             <span>Đăng Xuất (Về Trang Chủ)</span>
           </button>
+        </div>
         </div>
       </aside>
 
