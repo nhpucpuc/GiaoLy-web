@@ -19,6 +19,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { Student } from '../../types';
 import { getFullCatechistNames } from '../../utils/catechistHelper';
+import { formatToDDMMYYYY } from '../../utils/dateUtils';
 
 export const AddStudentView: React.FC = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ export const AddStudentView: React.FC = () => {
     holyName: 'Giuse',
     fullName: '',
     gender: 'Nam' as 'Nam' | 'Nữ',
-    dob: '2016-01-01',
+    dob: '01-01-2016',
     pob: '',
     parishSubdivision: 'Mẹ Lên Trời',
     address: '',
@@ -352,14 +353,16 @@ export const AddStudentView: React.FC = () => {
 
                 {/* Ngày sinh */}
                 <div>
-                  <label className="block font-semibold text-on-surface mb-1">Ngày sinh (*)</label>
+                  <label className="block font-semibold text-on-surface mb-1">Ngày sinh (*) (dd-mm-yyyy)</label>
                   <div className="relative">
                     <Calendar className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-primary" />
                     <input
-                      type="date"
+                      type="text"
                       required
+                      placeholder="dd-mm-yyyy (VD: 15-04-2019)"
                       value={formData.dob}
                       onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                      onBlur={(e) => setFormData({ ...formData, dob: formatToDDMMYYYY(e.target.value) })}
                       className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-white border border-outline-variant/40 focus:outline-none focus:border-primary transition-all text-xs"
                     />
                   </div>
@@ -430,11 +433,13 @@ export const AddStudentView: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[11px] text-outline mb-1">Ngày Rửa tội:</label>
+                      <label className="block text-[11px] text-outline mb-1">Ngày Rửa tội (dd-mm-yyyy):</label>
                       <input
-                        type="date"
+                        type="text"
+                        placeholder="dd-mm-yyyy"
                         value={formData.baptismDate}
                         onChange={(e) => setFormData({ ...formData, baptismDate: e.target.value })}
+                        onBlur={(e) => setFormData({ ...formData, baptismDate: formatToDDMMYYYY(e.target.value) })}
                         className="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/40 text-xs"
                       />
                     </div>
@@ -459,11 +464,13 @@ export const AddStudentView: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[11px] text-outline mb-1">Ngày RLLĐ:</label>
+                      <label className="block text-[11px] text-outline mb-1">Ngày RLLĐ (dd-mm-yyyy):</label>
                       <input
-                        type="date"
+                        type="text"
+                        placeholder="dd-mm-yyyy"
                         value={formData.eucharistDate}
                         onChange={(e) => setFormData({ ...formData, eucharistDate: e.target.value })}
+                        onBlur={(e) => setFormData({ ...formData, eucharistDate: formatToDDMMYYYY(e.target.value) })}
                         className="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/40 text-xs"
                       />
                     </div>
@@ -488,11 +495,13 @@ export const AddStudentView: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[11px] text-outline mb-1">Ngày Thêm sức:</label>
+                      <label className="block text-[11px] text-outline mb-1">Ngày Thêm sức (dd-mm-yyyy):</label>
                       <input
-                        type="date"
+                        type="text"
+                        placeholder="dd-mm-yyyy"
                         value={formData.confirmationDate}
                         onChange={(e) => setFormData({ ...formData, confirmationDate: e.target.value })}
+                        onBlur={(e) => setFormData({ ...formData, confirmationDate: formatToDDMMYYYY(e.target.value) })}
                         className="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/40 text-xs"
                       />
                     </div>
@@ -517,11 +526,13 @@ export const AddStudentView: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[11px] text-outline mb-1">Ngày Bao đồng:</label>
+                      <label className="block text-[11px] text-outline mb-1">Ngày Bao đồng (dd-mm-yyyy):</label>
                       <input
-                        type="date"
+                        type="text"
+                        placeholder="dd-mm-yyyy"
                         value={formData.solemnCommunionDate}
                         onChange={(e) => setFormData({ ...formData, solemnCommunionDate: e.target.value })}
+                        onBlur={(e) => setFormData({ ...formData, solemnCommunionDate: formatToDDMMYYYY(e.target.value) })}
                         className="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/40 text-xs"
                       />
                     </div>

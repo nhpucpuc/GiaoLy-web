@@ -20,6 +20,7 @@ import { Student, GradeRecord } from '../../types';
 import { RankBadge } from '../shared/RankBadge';
 import { GenderAvatar } from '../shared/GenderAvatar';
 import { getFullCatechistNames } from '../../utils/catechistHelper';
+import { formatToDDMMYYYY } from '../../utils/dateUtils';
 import { api } from '../../services/api';
 
 export const AdminStudentDetailView: React.FC = () => {
@@ -145,7 +146,12 @@ export const AdminStudentDetailView: React.FC = () => {
       ...studentFormData,
       fullName: studentFormData.fullName || currentStudent.fullName,
       holyName: studentFormData.holyName || currentStudent.holyName,
-      gender: (studentFormData.gender as 'Nam' | 'Nữ') || currentStudent.gender
+      gender: (studentFormData.gender as 'Nam' | 'Nữ') || currentStudent.gender,
+      dob: formatToDDMMYYYY(studentFormData.dob) || currentStudent.dob,
+      baptismDate: formatToDDMMYYYY(studentFormData.baptismDate),
+      eucharistDate: formatToDDMMYYYY(studentFormData.eucharistDate),
+      confirmationDate: formatToDDMMYYYY(studentFormData.confirmationDate),
+      solemnCommunionDate: formatToDDMMYYYY(studentFormData.solemnCommunionDate),
     };
 
     updateStudent(updated);
@@ -640,12 +646,14 @@ export const AdminStudentDetailView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-on-surface mb-1">Ngày Sinh</label>
+                  <label className="block font-bold text-on-surface mb-1">Ngày Sinh (dd-mm-yyyy)</label>
                   <input
-                    type="date"
+                    type="text"
+                    placeholder="dd-mm-yyyy (VD: 15-04-2019)"
                     value={studentFormData.dob || ''}
                     onChange={(e) => setStudentFormData({ ...studentFormData, dob: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    onBlur={(e) => setStudentFormData({ ...studentFormData, dob: formatToDDMMYYYY(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary text-xs"
                   />
                 </div>
 
@@ -691,29 +699,35 @@ export const AdminStudentDetailView: React.FC = () => {
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <div>
-                    <label className="block font-medium text-on-surface-variant mb-1">Ngày Rửa Tội</label>
+                    <label className="block font-medium text-on-surface-variant mb-1">Ngày Rửa Tội (dd-mm-yyyy)</label>
                     <input
-                      type="date"
+                      type="text"
+                      placeholder="dd-mm-yyyy"
                       value={studentFormData.baptismDate || ''}
                       onChange={(e) => setStudentFormData({ ...studentFormData, baptismDate: e.target.value })}
+                      onBlur={(e) => setStudentFormData({ ...studentFormData, baptismDate: formatToDDMMYYYY(e.target.value) })}
                       className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant/40 rounded-lg"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-on-surface-variant mb-1">Xưng Tội & Rước Lễ</label>
+                    <label className="block font-medium text-on-surface-variant mb-1">Xưng Tội &amp; Rước Lễ (dd-mm-yyyy)</label>
                     <input
-                      type="date"
+                      type="text"
+                      placeholder="dd-mm-yyyy"
                       value={studentFormData.eucharistDate || ''}
                       onChange={(e) => setStudentFormData({ ...studentFormData, eucharistDate: e.target.value })}
+                      onBlur={(e) => setStudentFormData({ ...studentFormData, eucharistDate: formatToDDMMYYYY(e.target.value) })}
                       className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant/40 rounded-lg"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-on-surface-variant mb-1">Ngày Thêm Sức</label>
+                    <label className="block font-medium text-on-surface-variant mb-1">Ngày Thêm Sức (dd-mm-yyyy)</label>
                     <input
-                      type="date"
+                      type="text"
+                      placeholder="dd-mm-yyyy"
                       value={studentFormData.confirmationDate || ''}
                       onChange={(e) => setStudentFormData({ ...studentFormData, confirmationDate: e.target.value })}
+                      onBlur={(e) => setStudentFormData({ ...studentFormData, confirmationDate: formatToDDMMYYYY(e.target.value) })}
                       className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant/40 rounded-lg"
                     />
                   </div>

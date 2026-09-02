@@ -5,9 +5,19 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-  <link rel="apple-touch-icon" href="/favicon-192x192.png" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Ban Giáo Lý Giáo Xứ Sơn Lộc</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <meta name="theme-color" content="#1e3a8a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Giáo Lý Sơn Lộc" />
+  <meta name="application-name" content="Giáo Lý Sơn Lộc" />
+  <meta name="description" content="Hệ thống quản lý và thông tin Ban Giáo Lý Giáo Xứ Sơn Lộc" />
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +26,7 @@
     rel="stylesheet">
 </head>
 
-<body class="bg-surface font-sans text-on-surface antialiased min-h-screen">
+<body class="bg-surface font-sans text-on-surface antialiased min-h-screen select-none md:select-auto">
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

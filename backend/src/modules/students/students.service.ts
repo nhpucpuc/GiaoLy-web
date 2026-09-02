@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStudentDto } from './dto/create-student.dto';
+import { parseDateToDDMMYYYY } from '../../common/utils/date-formatter';
 
 function mapStudentStatus(st?: string): any {
   if (!st) return 'DANG_HOC';
@@ -79,7 +80,7 @@ export class StudentsService {
       holyName: createStudentDto.holyName || 'Giuse',
       fullName: createStudentDto.fullName,
       gender: createStudentDto.gender || 'Nam',
-      dob: createStudentDto.dob || '2016-01-01',
+      dob: parseDateToDDMMYYYY(createStudentDto.dob) || '01-01-2016',
       pob: createStudentDto.pob || null,
       address: createStudentDto.address || 'Giáo xứ Sơn Lộc',
       parishSubdivision: createStudentDto.parishSubdivision || null,
@@ -92,13 +93,13 @@ export class StudentsService {
       motherHolyName: createStudentDto.motherHolyName || null,
       motherName: createStudentDto.motherName || null,
       motherPhone: createStudentDto.motherPhone || null,
-      baptismDate: createStudentDto.baptismDate || null,
+      baptismDate: parseDateToDDMMYYYY(createStudentDto.baptismDate),
       baptismPlace: createStudentDto.baptismPlace || null,
-      eucharistDate: createStudentDto.eucharistDate || null,
+      eucharistDate: parseDateToDDMMYYYY(createStudentDto.eucharistDate),
       eucharistPlace: createStudentDto.eucharistPlace || null,
-      confirmationDate: createStudentDto.confirmationDate || null,
+      confirmationDate: parseDateToDDMMYYYY(createStudentDto.confirmationDate),
       confirmationPlace: createStudentDto.confirmationPlace || null,
-      solemnCommunionDate: createStudentDto.solemnCommunionDate || null,
+      solemnCommunionDate: parseDateToDDMMYYYY(createStudentDto.solemnCommunionDate),
       solemnCommunionPlace: createStudentDto.solemnCommunionPlace || null,
       status: mapStudentStatus(createStudentDto.status),
       avatar: createStudentDto.avatar || null,
@@ -134,6 +135,22 @@ export class StudentsService {
     if (updateStudentDto.status) {
       data.status = mapStudentStatus(updateStudentDto.status);
     }
+    if (updateStudentDto.dob !== undefined) {
+      data.dob = parseDateToDDMMYYYY(updateStudentDto.dob);
+    }
+    if (updateStudentDto.baptismDate !== undefined) {
+      data.baptismDate = parseDateToDDMMYYYY(updateStudentDto.baptismDate);
+    }
+    if (updateStudentDto.eucharistDate !== undefined) {
+      data.eucharistDate = parseDateToDDMMYYYY(updateStudentDto.eucharistDate);
+    }
+    if (updateStudentDto.confirmationDate !== undefined) {
+      data.confirmationDate = parseDateToDDMMYYYY(updateStudentDto.confirmationDate);
+    }
+    if (updateStudentDto.solemnCommunionDate !== undefined) {
+      data.solemnCommunionDate = parseDateToDDMMYYYY(updateStudentDto.solemnCommunionDate);
+    }
+
     // Remove relation objects if passed
     delete data.class;
     delete data.grades;

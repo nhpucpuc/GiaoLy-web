@@ -13,9 +13,11 @@ import { CatechistClassOverview } from './components/catechist/CatechistClassOve
 import { GradeEntryView } from './components/catechist/GradeEntryView';
 import { AttendanceView } from './components/catechist/AttendanceView';
 import { ParentPortal } from './components/parent/ParentPortal';
+import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
 
 import { UserRole } from './types';
 import { useApp } from './context/AppContext';
+
 
 // Layout chung cho các portal sau khi đăng nhập (chỉ có Sidebar và Toolbar)
 function PortalLayout() {
@@ -109,6 +111,7 @@ export default function App() {
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <PWAInstallPrompt />
     </BrowserRouter>
   );
 }

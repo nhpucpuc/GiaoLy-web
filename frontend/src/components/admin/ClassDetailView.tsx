@@ -26,6 +26,7 @@ import { getFullCatechistNames } from '../../utils/catechistHelper';
 import { GradeEntryView } from '../catechist/GradeEntryView';
 import { StudentTranscriptModal } from '../shared/StudentTranscriptModal';
 import { exportClassRosterToExcel } from '../../utils/excelExport';
+import { formatToDDMMYYYY } from '../../utils/dateUtils';
 
 type EditFieldType =
   | 'NAME'
@@ -127,7 +128,12 @@ export const ClassDetailView: React.FC = () => {
       ...formData,
       fullName: formData.fullName || editingStudent.fullName,
       holyName: formData.holyName || editingStudent.holyName,
-      gender: (formData.gender as 'Nam' | 'Nữ') || editingStudent.gender
+      gender: (formData.gender as 'Nam' | 'Nữ') || editingStudent.gender,
+      dob: formatToDDMMYYYY(formData.dob) || editingStudent.dob,
+      baptismDate: formatToDDMMYYYY(formData.baptismDate),
+      eucharistDate: formatToDDMMYYYY(formData.eucharistDate),
+      confirmationDate: formatToDDMMYYYY(formData.confirmationDate),
+      solemnCommunionDate: formatToDDMMYYYY(formData.solemnCommunionDate),
     };
 
     updateStudent(updated);
@@ -755,13 +761,14 @@ export const ClassDetailView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-on-surface mb-1">Ngày Sinh (DD/MM/YYYY)</label>
+                    <label className="block font-bold text-on-surface mb-1">Ngày Sinh (dd-mm-yyyy)</label>
                     <input
                       type="text"
                       value={formData.dob || ''}
                       onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                      onBlur={(e) => setFormData({ ...formData, dob: formatToDDMMYYYY(e.target.value) })}
                       className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
-                      placeholder="VD: 23/06/2018"
+                      placeholder="VD: 23-06-2018"
                     />
                   </div>
 
@@ -862,13 +869,14 @@ export const ClassDetailView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-on-surface mb-1">Ngày Rửa Tội (DD/MM/YYYY)</label>
+                    <label className="block font-bold text-on-surface mb-1">Ngày Rửa Tội (dd-mm-yyyy)</label>
                     <input
                       type="text"
                       value={formData.baptismDate || ''}
                       onChange={(e) => setFormData({ ...formData, baptismDate: e.target.value })}
+                      onBlur={(e) => setFormData({ ...formData, baptismDate: formatToDDMMYYYY(e.target.value) })}
                       className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
-                      placeholder="VD: 15/08/2018"
+                      placeholder="VD: 15-08-2018"
                     />
                   </div>
 
@@ -894,13 +902,14 @@ export const ClassDetailView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-on-surface mb-1">Ngày RLLĐ (DD/MM/YYYY)</label>
+                    <label className="block font-bold text-on-surface mb-1">Ngày RLLĐ (dd-mm-yyyy)</label>
                     <input
                       type="text"
                       value={formData.eucharistDate || ''}
                       onChange={(e) => setFormData({ ...formData, eucharistDate: e.target.value })}
+                      onBlur={(e) => setFormData({ ...formData, eucharistDate: formatToDDMMYYYY(e.target.value) })}
                       className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
-                      placeholder="VD: 07/06/2026"
+                      placeholder="VD: 07-06-2026"
                     />
                   </div>
 
@@ -926,13 +935,14 @@ export const ClassDetailView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-on-surface mb-1">Ngày Thêm Sức (DD/MM/YYYY)</label>
+                    <label className="block font-bold text-on-surface mb-1">Ngày Thêm Sức (dd-mm-yyyy)</label>
                     <input
                       type="text"
                       value={formData.confirmationDate || ''}
                       onChange={(e) => setFormData({ ...formData, confirmationDate: e.target.value })}
+                      onBlur={(e) => setFormData({ ...formData, confirmationDate: formatToDDMMYYYY(e.target.value) })}
                       className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
-                      placeholder="VD: 25/07/2027"
+                      placeholder="VD: 15-08-2025"
                     />
                   </div>
 
@@ -958,13 +968,14 @@ export const ClassDetailView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-on-surface mb-1">Ngày Bao Đồng (DD/MM/YYYY)</label>
+                    <label className="block font-bold text-on-surface mb-1">Ngày Bao Đồng (dd-mm-yyyy)</label>
                     <input
                       type="text"
                       value={formData.solemnCommunionDate || ''}
                       onChange={(e) => setFormData({ ...formData, solemnCommunionDate: e.target.value })}
+                      onBlur={(e) => setFormData({ ...formData, solemnCommunionDate: formatToDDMMYYYY(e.target.value) })}
                       className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
-                      placeholder="VD: 30/05/2028"
+                      placeholder="VD: 30-05-2028"
                     />
                   </div>
 

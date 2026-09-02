@@ -21,6 +21,7 @@ import { useApp } from '../../context/AppContext';
 import { Student } from '../../types';
 import { getFullCatechistNames } from '../../utils/catechistHelper';
 import { exportClassRosterToExcel } from '../../utils/excelExport';
+import { formatToDDMMYYYY } from '../../utils/dateUtils';
 
 type EditFieldType =
   | 'NAME'
@@ -98,7 +99,12 @@ export const CatechistClassOverview: React.FC = () => {
       ...formData,
       fullName: formData.fullName || editingStudent.fullName,
       holyName: formData.holyName || editingStudent.holyName,
-      gender: (formData.gender as 'Nam' | 'Nữ') || editingStudent.gender
+      gender: (formData.gender as 'Nam' | 'Nữ') || editingStudent.gender,
+      dob: formatToDDMMYYYY(formData.dob) || editingStudent.dob,
+      baptismDate: formatToDDMMYYYY(formData.baptismDate),
+      eucharistDate: formatToDDMMYYYY(formData.eucharistDate),
+      confirmationDate: formatToDDMMYYYY(formData.confirmationDate),
+      solemnCommunionDate: formatToDDMMYYYY(formData.solemnCommunionDate),
     };
 
     updateStudent(updated);
@@ -671,19 +677,20 @@ export const CatechistClassOverview: React.FC = () => {
               {/* 2. DOB_POB: Ngày sinh & Nơi sinh */}
               {editField === 'DOB_POB' && (
                 <div className="space-y-3.5">
-                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-primary font-bold text-sm">
+                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-secondary font-bold text-sm">
                     <Calendar className="w-4 h-4" />
                     <span>Ngày Sinh & Nơi Sinh</span>
                   </div>
 
                   <div>
-                    <label className="block font-bold text-on-surface mb-1">Ngày Sinh (DD/MM/YYYY)</label>
+                    <label className="block font-bold text-on-surface mb-1">Ngày Sinh (dd-mm-yyyy)</label>
                     <input
                       type="text"
                       value={formData.dob || ''}
                       onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
-                      placeholder="VD: 23/06/2018"
+                      onBlur={(e) => setFormData({ ...formData, dob: formatToDDMMYYYY(e.target.value) })}
+                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-secondary"
+                      placeholder="VD: 23-06-2018"
                     />
                   </div>
 
@@ -693,7 +700,7 @@ export const CatechistClassOverview: React.FC = () => {
                       type="text"
                       value={formData.pob || ''}
                       onChange={(e) => setFormData({ ...formData, pob: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
+                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-secondary"
                       placeholder="Bệnh viện, Tỉnh/TP..."
                     />
                   </div>
@@ -703,7 +710,7 @@ export const CatechistClassOverview: React.FC = () => {
               {/* 3. ADDRESS: Chỗ ở hiện tại */}
               {editField === 'ADDRESS' && (
                 <div className="space-y-3.5">
-                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-primary font-bold text-sm">
+                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-secondary font-bold text-sm">
                     <MapPin className="w-4 h-4" />
                     <span>Chỗ Ở Hiện Tại</span>
                   </div>
@@ -714,7 +721,7 @@ export const CatechistClassOverview: React.FC = () => {
                       rows={3}
                       value={formData.address || ''}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
+                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-secondary"
                       placeholder="Số nhà, tên đường, thôn/ấp, xã/phường..."
                     />
                   </div>
@@ -724,7 +731,7 @@ export const CatechistClassOverview: React.FC = () => {
               {/* 4. PARISH_SUB: Giáo khu / Giáo họ */}
               {editField === 'PARISH_SUB' && (
                 <div className="space-y-3.5">
-                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-primary font-bold text-sm">
+                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-secondary font-bold text-sm">
                     <MapPin className="w-4 h-4" />
                     <span>Giáo Khu / Giáo Họ</span>
                   </div>
@@ -735,7 +742,7 @@ export const CatechistClassOverview: React.FC = () => {
                       type="text"
                       value={formData.parishSubdivision || ''}
                       onChange={(e) => setFormData({ ...formData, parishSubdivision: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-bold text-primary outline-none focus:border-primary"
+                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-bold text-secondary outline-none focus:border-secondary"
                       placeholder="VD: Mẹ Thiên Chúa, Đức Mẹ Lên Trời..."
                     />
                   </div>
@@ -745,7 +752,7 @@ export const CatechistClassOverview: React.FC = () => {
               {/* 5. PHONE: Số điện thoại liên lạc */}
               {editField === 'PHONE' && (
                 <div className="space-y-3.5">
-                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-primary font-bold text-sm">
+                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-secondary font-bold text-sm">
                     <Phone className="w-4 h-4" />
                     <span>Số Điện Thoại Liên Lạc</span>
                   </div>
@@ -756,7 +763,7 @@ export const CatechistClassOverview: React.FC = () => {
                       type="tel"
                       value={formData.parentPhone || ''}
                       onChange={(e) => setFormData({ ...formData, parentPhone: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-bold text-primary outline-none focus:border-primary"
+                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-bold text-secondary outline-none focus:border-secondary"
                       placeholder="09xx xxx xxx"
                       required
                     />
@@ -768,7 +775,7 @@ export const CatechistClassOverview: React.FC = () => {
                       type="text"
                       value={formData.parentName || ''}
                       onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
+                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-secondary"
                       placeholder="VD: Bố Bùi Quốc Dũng"
                     />
                   </div>
@@ -778,19 +785,20 @@ export const CatechistClassOverview: React.FC = () => {
               {/* 6. BAPTISM: Bí Tích Rửa Tội */}
               {editField === 'BAPTISM' && (
                 <div className="space-y-3.5">
-                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-primary font-bold text-sm">
+                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-secondary font-bold text-sm">
                     <Heart className="w-4 h-4" />
                     <span>Bí Tích Rửa Tội</span>
                   </div>
 
                   <div>
-                    <label className="block font-bold text-on-surface mb-1">Ngày Rửa Tội (DD/MM/YYYY)</label>
+                    <label className="block font-bold text-on-surface mb-1">Ngày Rửa Tội (dd-mm-yyyy)</label>
                     <input
                       type="text"
                       value={formData.baptismDate || ''}
                       onChange={(e) => setFormData({ ...formData, baptismDate: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
-                      placeholder="VD: 15/08/2018"
+                      onBlur={(e) => setFormData({ ...formData, baptismDate: formatToDDMMYYYY(e.target.value) })}
+                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-secondary"
+                      placeholder="VD: 15-08-2018"
                     />
                   </div>
 
@@ -800,7 +808,7 @@ export const CatechistClassOverview: React.FC = () => {
                       type="text"
                       value={formData.baptismPlace || ''}
                       onChange={(e) => setFormData({ ...formData, baptismPlace: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
+                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-secondary"
                       placeholder="VD: Giáo xứ Sơn Lộc"
                     />
                   </div>
@@ -810,19 +818,20 @@ export const CatechistClassOverview: React.FC = () => {
               {/* 7. EUCHARIST: Xưng Tội & Rước Lễ Lần Đầu */}
               {editField === 'EUCHARIST' && (
                 <div className="space-y-3.5">
-                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-primary font-bold text-sm">
+                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-secondary font-bold text-sm">
                     <BookOpen className="w-4 h-4" />
                     <span>Xưng Tội & Rước Lễ Lần Đầu</span>
                   </div>
 
                   <div>
-                    <label className="block font-bold text-on-surface mb-1">Ngày RLLĐ (DD/MM/YYYY)</label>
+                    <label className="block font-bold text-on-surface mb-1">Ngày RLLĐ (dd-mm-yyyy)</label>
                     <input
                       type="text"
                       value={formData.eucharistDate || ''}
                       onChange={(e) => setFormData({ ...formData, eucharistDate: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
-                      placeholder="VD: 07/06/2026"
+                      onBlur={(e) => setFormData({ ...formData, eucharistDate: formatToDDMMYYYY(e.target.value) })}
+                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-secondary"
+                      placeholder="VD: 07-06-2026"
                     />
                   </div>
 
@@ -832,7 +841,7 @@ export const CatechistClassOverview: React.FC = () => {
                       type="text"
                       value={formData.eucharistPlace || ''}
                       onChange={(e) => setFormData({ ...formData, eucharistPlace: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
+                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-secondary"
                       placeholder="VD: Giáo xứ Sơn Lộc"
                     />
                   </div>
@@ -842,19 +851,20 @@ export const CatechistClassOverview: React.FC = () => {
               {/* 8. CONFIRMATION: Bí Tích Thêm Sức */}
               {editField === 'CONFIRMATION' && (
                 <div className="space-y-3.5">
-                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-primary font-bold text-sm">
+                  <div className="flex items-center gap-2 pb-1.5 border-b border-outline-variant/30 text-secondary font-bold text-sm">
                     <Flame className="w-4 h-4" />
                     <span>Bí Tích Thêm Sức</span>
                   </div>
 
                   <div>
-                    <label className="block font-bold text-on-surface mb-1">Ngày Thêm Sức (DD/MM/YYYY)</label>
+                    <label className="block font-bold text-on-surface mb-1">Ngày Thêm Sức (dd-mm-yyyy)</label>
                     <input
                       type="text"
                       value={formData.confirmationDate || ''}
                       onChange={(e) => setFormData({ ...formData, confirmationDate: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-primary"
-                      placeholder="VD: 25/07/2027"
+                      onBlur={(e) => setFormData({ ...formData, confirmationDate: formatToDDMMYYYY(e.target.value) })}
+                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-medium text-on-surface outline-none focus:border-secondary"
+                      placeholder="VD: 15-08-2025"
                     />
                   </div>
 
