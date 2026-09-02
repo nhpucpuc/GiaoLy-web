@@ -42,7 +42,7 @@ export const AuthLoginModal: React.FC<AuthLoginModalProps> = ({
     setIsLoading(true);
     setError('');
 
-    const res = await login(email.trim(), password);
+    const res = await login(email.trim(), password, targetRole);
     setIsLoading(false);
 
     if (res.success) {

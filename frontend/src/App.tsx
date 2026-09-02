@@ -14,6 +14,9 @@ import { GradeEntryView } from './components/catechist/GradeEntryView';
 import { AttendanceView } from './components/catechist/AttendanceView';
 import { ParentPortal } from './components/parent/ParentPortal';
 
+import { UserRole } from './types';
+import { useApp } from './context/AppContext';
+
 // Layout chung cho các portal sau khi đăng nhập (chỉ có Sidebar và Toolbar)
 function PortalLayout() {
   return (
@@ -37,6 +40,23 @@ function PortalLayout() {
   );
 }
 
+// Route Guard bảo vệ theo vai trò truy cập
+function RoleProtectedRoute({ allowedRoles, children }: { allowedRoles: UserRole[]; children: React.ReactNode }) {
+  const { currentRole } = useApp();
+
+  if (!allowedRoles.includes(currentRole)) {
+    if (currentRole === 'admin') {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+    if (currentRole === 'catechist') {
+      return <Navigate to="/glyvien/tong-quan" replace />;
+    }
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -45,7 +65,14 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
 
         {/* Route 2: Cổng Ban Giáo Lý (Admin Routes) */}
-        <Route path="/admin" element={<PortalLayout />}>
+        <Route
+          path="/admin"
+          element={
+            <RoleProtectedRoute allowedRoles={['admin']}>
+              <PortalLayout />
+            </RoleProtectedRoute>
+          }
+        >
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="giao-ly-vien" element={<CatechistListView />} />
@@ -59,7 +86,14 @@ export default function App() {
         </Route>
 
         {/* Route 3: Cổng Giáo Lý Viên (GLV Routes) */}
-        <Route path="/glyvien" element={<PortalLayout />}>
+        <Route
+          path="/glyvien"
+          element={
+            <RoleProtectedRoute allowedRoles={['catechist']}>
+              <PortalLayout />
+            </RoleProtectedRoute>
+          }
+        >
           <Route index element={<Navigate to="/glyvien/tong-quan" replace />} />
           <Route path="tong-quan" element={<CatechistClassOverview />} />
           <Route path="nhap-diem" element={<GradeEntryView />} />

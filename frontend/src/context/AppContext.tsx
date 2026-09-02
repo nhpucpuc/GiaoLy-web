@@ -26,7 +26,7 @@ interface AppContextType {
   announcements: Announcement[];
   catechists: any[];
   switchRole: (role: UserRole) => void;
-  login: (email: string, password: string) => Promise<{ success: boolean; message?: string; role?: UserRole }>;
+  login: (email: string, password: string, expectedRole?: UserRole) => Promise<{ success: boolean; message?: string; role?: UserRole }>;
   logout: () => void;
   setActiveTab: (tab: string) => void;
   setSelectedClassId: (classId: string) => void;
@@ -245,7 +245,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     sessionStorage.setItem('gx_role', currentRole);
   }, [currentRole]);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; message?: string; role?: UserRole }> => {
+  const login = async (
+    email: string,
+    password: string,
+    expectedRole?: UserRole
+  ): Promise<{ success: boolean; message?: string; role?: UserRole }> => {
     try {
       const res = await api.login(email, password);
       if (res && res.user) {
@@ -253,6 +257,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (res.user.role === 'ADMIN') mappedRole = 'admin';
         else if (res.user.role === 'CATECHIST') mappedRole = 'catechist';
         else if (res.user.role === 'PARENT') mappedRole = 'parent';
+
+        // Kiểm tra đúng vai trò được yêu cầu đăng nhập
+        if (expectedRole && mappedRole !== expectedRole) {
+          api.logout();
+          if (expectedRole === 'admin') {
+            return {
+              success: false,
+              message: mappedRole === 'catechist'
+                ? 'Tài khoản này là Giáo Lý Viên. Vui lòng đăng nhập tại mục "Đăng nhập Giáo Lý Viên"!'
+                : 'Tài khoản không có quyền Ban Quản Trị (Admin)!'
+            };
+          } else if (expectedRole === 'catechist') {
+            return {
+              success: false,
+              message: mappedRole === 'admin'
+                ? 'Tài khoản này là Ban Quản Trị. Vui lòng đăng nhập tại mục "Đăng nhập Ban Quản Trị"!'
+                : 'Tài khoản không có quyền Giáo Lý Viên!'
+            };
+          } else {
+            return {
+              success: false,
+              message: 'Tài khoản không đúng quyền truy cập theo yêu cầu!'
+            };
+          }
+        }
 
         const profile: User = {
           id: res.user.id,
