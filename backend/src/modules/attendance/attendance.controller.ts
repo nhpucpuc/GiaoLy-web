@@ -4,9 +4,9 @@ import { AttendanceService, StudentAbsenceBatchDto } from './attendance.service'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { AttendanceType, AttendanceStatus } from '@prisma/client';
+import { AttendanceStatus } from '@prisma/client';
 
-@ApiTags('Attendance (Chuyên cần Thánh lễ & Giờ học)')
+@ApiTags('Attendance (Chuyên cần & Ngày nghỉ Giáo Lý)')
 @Controller('api/attendance')
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
@@ -33,7 +33,6 @@ export class AttendanceController {
     data: {
       studentId: string;
       date: string;
-      type?: AttendanceType;
       status?: AttendanceStatus;
       notes?: string;
     },

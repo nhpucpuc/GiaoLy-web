@@ -12,7 +12,9 @@ import {
   UserCheck,
   UserX,
   Trash2,
-  Plus
+  Plus,
+  Clock,
+  ArrowLeft
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { GenderAvatar } from '../shared/GenderAvatar';
@@ -21,7 +23,6 @@ import { api } from '../../services/api';
 export interface AbsenceItem {
   id?: string;
   date: string;
-  type: 'LE_CHUA_NHAT' | 'GIO_GIAO_LY';
   status: 'VANG_CO_PHEP' | 'VANG_KHONG_PHEP';
   notes?: string;
 }
@@ -37,6 +38,25 @@ export interface StudentAttendanceRow {
   isDirty?: boolean;
 }
 
+// Lấy ngày hôm nay theo giờ địa phương YYYY-MM-DD
+const getLocalDateString = (): string => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Format ngày hiển thị tiếng Việt DD/MM/YYYY
+const formatDisplayDate = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+};
+
 export const AttendanceView: React.FC = () => {
   const {
     students,
@@ -47,6 +67,9 @@ export const AttendanceView: React.FC = () => {
     currentUser
   } = useApp();
 
+  // Chế độ: 'TODAY' (Mặc định: Điểm danh nhanh hôm nay) hoặc 'MANUAL' (Điểm danh sau)
+  const [viewMode, setViewMode] = useState<'TODAY' | 'MANUAL'>('TODAY');
+
   // Xác định lớp phụ trách
   const activeClassId = currentRole === 'catechist' && currentUser?.assignedClassId
     ? currentUser.assignedClassId
@@ -54,6 +77,7 @@ export const AttendanceView: React.FC = () => {
 
   const activeClass = classes.find((c) => c.id === activeClassId);
 
+  const todayDateStr = useMemo(() => getLocalDateString(), []);
   const [searchQuery, setSearchQuery] = useState('');
   const [attendanceData, setAttendanceData] = useState<Record<string, StudentAttendanceRow>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -83,8 +107,7 @@ export const AttendanceView: React.FC = () => {
 
         const absences: AbsenceItem[] = studentRecords.map((r: any) => ({
           id: r.id,
-          date: r.date || new Date().toISOString().split('T')[0],
-          type: r.type === 'GIO_GIAO_LY' ? 'GIO_GIAO_LY' : 'LE_CHUA_NHAT',
+          date: r.date || todayDateStr,
           status: r.status === 'VANG_KHONG_PHEP' ? 'VANG_KHONG_PHEP' : 'VANG_CO_PHEP',
           notes: r.notes || '',
         }));
@@ -113,7 +136,79 @@ export const AttendanceView: React.FC = () => {
     fetchClassAttendance();
   }, [activeClassId, students]);
 
-  // Thay đổi số lượng ngày nghỉ của học sinh (Kèm cơ chế an toàn tránh mất dữ liệu)
+  // =========================================================================
+  // XỬ LÝ TICK ĐIỂM DANH NHANH HÔM NAY (3 TRẠNG THÁI XOAY VÒNG)
+  // Tick 1 lần: Vắng không phép ("V" màu đỏ)
+  // Tick 2 lần: Vắng có phép ("VP" màu xanh)
+  // Tick 3 lần: Bỏ chọn (Trống / Đi học)
+  // =========================================================================
+  const getTodayStatus = (studentId: string): 'V' | 'VP' | '' => {
+    const row = attendanceData[studentId];
+    if (!row) return '';
+    const todayAbsence = row.absences.find((a) => a.date === todayDateStr);
+    if (!todayAbsence) return '';
+    return todayAbsence.status === 'VANG_KHONG_PHEP' ? 'V' : 'VP';
+  };
+
+  const handleCycleTodayAttendance = (studentId: string) => {
+    setAttendanceData((prev) => {
+      const row = prev[studentId];
+      if (!row) return prev;
+
+      const currentStatus = getTodayStatus(studentId);
+      let updatedAbsences = [...row.absences];
+      const todayIndex = updatedAbsences.findIndex((a) => a.date === todayDateStr);
+
+      if (currentStatus === '') {
+        // Trạng thái 1: Vắng không phép ("V")
+        if (todayIndex >= 0) {
+          updatedAbsences[todayIndex] = {
+            ...updatedAbsences[todayIndex],
+            status: 'VANG_KHONG_PHEP',
+          };
+        } else {
+          updatedAbsences.push({
+            date: todayDateStr,
+            status: 'VANG_KHONG_PHEP',
+            notes: '',
+          });
+        }
+      } else if (currentStatus === 'V') {
+        // Trạng thái 2: Vắng có phép ("VP")
+        if (todayIndex >= 0) {
+          updatedAbsences[todayIndex] = {
+            ...updatedAbsences[todayIndex],
+            status: 'VANG_CO_PHEP',
+          };
+        } else {
+          updatedAbsences.push({
+            date: todayDateStr,
+            status: 'VANG_CO_PHEP',
+            notes: '',
+          });
+        }
+      } else {
+        // Trạng thái 3: Bỏ chọn -> Đi học (xóa bản ghi vắng của hôm nay)
+        if (todayIndex >= 0) {
+          updatedAbsences = updatedAbsences.filter((a) => a.date !== todayDateStr);
+        }
+      }
+
+      return {
+        ...prev,
+        [studentId]: {
+          ...row,
+          absentCount: updatedAbsences.length,
+          absences: updatedAbsences,
+          isDirty: true,
+        },
+      };
+    });
+  };
+
+  // =========================================================================
+  // CÁC HÀM XỬ LÝ CHẾ ĐỘ "ĐIỂM DANH SAU" (THỦ CÔNG)
+  // =========================================================================
   const handleAbsentCountChange = (studentId: string, count: number) => {
     const current = attendanceData[studentId];
     if (!current) return;
@@ -123,7 +218,6 @@ export const AttendanceView: React.FC = () => {
 
     if (newCount === currentLen) return;
 
-    // Kiểm tra an toàn trước khi cập nhật state (đặt ngoài setState để không bị gọi 2 lần bởi React)
     if (newCount < currentLen) {
       const willBeRemoved = current.absences.slice(newCount);
       const hasDetailedData = willBeRemoved.some(
@@ -135,7 +229,7 @@ export const AttendanceView: React.FC = () => {
           `Em ${current.holyName} ${current.fullName} đang có ${currentLen} ngày nghỉ chi tiết. Bạn có chắc chắn muốn giảm xuống còn ${newCount} ngày không? (${currentLen - newCount} ngày nghỉ phía sau sẽ bị bỏ).`
         );
         if (!isConfirmed) {
-          return; // Hủy thao tác, giữ nguyên số ngày nghỉ
+          return;
         }
       }
     }
@@ -147,13 +241,10 @@ export const AttendanceView: React.FC = () => {
       let newAbsences = [...row.absences];
 
       if (newCount > row.absences.length) {
-        // Thêm các ngày nghỉ mới
         const diff = newCount - row.absences.length;
-        const todayStr = new Date().toISOString().split('T')[0];
         for (let i = 0; i < diff; i++) {
           newAbsences.push({
-            date: todayStr,
-            type: 'LE_CHUA_NHAT',
+            date: todayDateStr,
             status: 'VANG_CO_PHEP',
             notes: '',
           });
@@ -174,7 +265,6 @@ export const AttendanceView: React.FC = () => {
     });
   };
 
-  // Cập nhật chi tiết 1 ngày nghỉ
   const handleAbsenceDetailChange = (
     studentId: string,
     index: number,
@@ -204,7 +294,6 @@ export const AttendanceView: React.FC = () => {
     });
   };
 
-  // Xóa 1 ngày nghỉ
   const handleRemoveAbsence = (studentId: string, index: number) => {
     setAttendanceData((prev) => {
       const current = prev[studentId];
@@ -224,18 +313,15 @@ export const AttendanceView: React.FC = () => {
     });
   };
 
-  // Thêm nhanh 1 ngày nghỉ
   const handleAddAbsenceQuick = (studentId: string) => {
     setAttendanceData((prev) => {
       const current = prev[studentId];
       if (!current) return prev;
 
-      const todayStr = new Date().toISOString().split('T')[0];
       const updatedAbsences = [
         ...current.absences,
         {
-          date: todayStr,
-          type: 'LE_CHUA_NHAT' as const,
+          date: todayDateStr,
           status: 'VANG_CO_PHEP' as const,
           notes: '',
         },
@@ -253,7 +339,9 @@ export const AttendanceView: React.FC = () => {
     });
   };
 
-  // Lưu toàn bộ danh sách điểm danh
+  // =========================================================================
+  // LƯU ĐIỂM DANH VÀO DATABASE
+  // =========================================================================
   const handleSaveAll = async () => {
     if (!activeClassId) return;
     setIsSaving(true);
@@ -263,7 +351,6 @@ export const AttendanceView: React.FC = () => {
         studentId: row.studentId,
         absences: row.absences.map((a) => ({
           date: a.date,
-          type: a.type,
           status: a.status,
           notes: a.notes || '',
         })),
@@ -279,7 +366,7 @@ export const AttendanceView: React.FC = () => {
         return next;
       });
 
-      showToast('Đã lưu dữ liệu điểm danh thành công!');
+      showToast('Đã lưu dữ liệu điểm danh vào hệ thống thành công!');
     } catch (err: any) {
       showToast('Lỗi khi lưu điểm danh: ' + (err.message || ''), 'error');
     } finally {
@@ -287,7 +374,6 @@ export const AttendanceView: React.FC = () => {
     }
   };
 
-  // Lưu riêng cho 1 học sinh
   const handleSaveSingle = async (studentId: string) => {
     const row = attendanceData[studentId];
     if (!row || !activeClassId) return;
@@ -298,7 +384,6 @@ export const AttendanceView: React.FC = () => {
           studentId: row.studentId,
           absences: row.absences.map((a) => ({
             date: a.date,
-            type: a.type,
             status: a.status,
             notes: a.notes || '',
           })),
@@ -316,7 +401,7 @@ export const AttendanceView: React.FC = () => {
     }
   };
 
-  // Danh sách hiển thị sau khi lọc tìm kiếm
+  // Danh sách học sinh sau khi lọc tìm kiếm
   const filteredStudentRows = useMemo(() => {
     const list = Object.values(attendanceData);
     if (!searchQuery.trim()) return list;
@@ -330,8 +415,38 @@ export const AttendanceView: React.FC = () => {
     );
   }, [attendanceData, searchQuery]);
 
-  // Thống kê hòa nhã, chuẩn mực
-  const stats = useMemo(() => {
+  // Thống kê hôm nay
+  const todayStats = useMemo(() => {
+    const all = Object.values(attendanceData);
+    const totalStudents = all.length;
+    let absentWithoutPerm = 0; // V
+    let absentWithPerm = 0;    // VP
+
+    all.forEach((r) => {
+      const todayAbs = r.absences.find((a) => a.date === todayDateStr);
+      if (todayAbs) {
+        if (todayAbs.status === 'VANG_KHONG_PHEP') {
+          absentWithoutPerm += 1;
+        } else {
+          absentWithPerm += 1;
+        }
+      }
+    });
+
+    const totalAbsentToday = absentWithoutPerm + absentWithPerm;
+    const presentToday = totalStudents - totalAbsentToday;
+
+    return {
+      totalStudents,
+      presentToday,
+      absentWithoutPerm,
+      absentWithPerm,
+      totalAbsentToday
+    };
+  }, [attendanceData, todayDateStr]);
+
+  // Thống kê tổng quan cả năm (Dành cho chế độ Điểm danh sau)
+  const fullYearStats = useMemo(() => {
     const all = Object.values(attendanceData);
     const totalStudents = all.length;
     const absentStudents = all.filter((r) => r.absentCount > 0).length;
@@ -370,7 +485,11 @@ export const AttendanceView: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-md bg-surface-container-low text-on-surface-variant font-medium text-xs border border-outline-variant/30 flex items-center gap-1.5">
                 <CalendarCheck className="w-3.5 h-3.5 text-primary" />
-                <span>Sổ Điểm Danh &amp; Chuyên Cần</span>
+                <span>
+                  {viewMode === 'TODAY'
+                    ? `Điểm danh hôm nay (${formatDisplayDate(todayDateStr)})`
+                    : 'Điểm danh sau (Thủ công theo ngày)'}
+                </span>
               </span>
               <span className="text-xs text-outline">• Niên khóa {activeClass?.academicYear || '2026 - 2027'}</span>
             </div>
@@ -378,12 +497,35 @@ export const AttendanceView: React.FC = () => {
               Điểm danh lớp {activeClass?.name || 'Giáo Lý'}
             </h1>
             <p className="text-xs text-on-surface-variant">
-              Theo dõi và ghi nhận số ngày nghỉ, ngày vắng có phép hoặc không phép của các em học sinh trong năm học.
+              {viewMode === 'TODAY'
+                ? 'Nhấn trực tiếp vào ô để chuyển đổi: Tick 1 lần (V - Vắng không phép), Tick 2 lần (VP - Vắng có phép), Tick 3 lần (Đi học).'
+                : 'Xem và tự điền ngày nghỉ cụ thể cho các buổi học đã qua trong năm học.'}
             </p>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons & Switch Mode Button */}
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* Nút Chuyển Đổi Chế Độ Điểm Danh */}
+            {viewMode === 'TODAY' ? (
+              <button
+                onClick={() => setViewMode('MANUAL')}
+                className="px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="Tự điểm danh cho các ngày học trước"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Điểm danh sau</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setViewMode('TODAY')}
+                className="px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="Quay lại điểm danh ngày hôm nay"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Về điểm danh hôm nay</span>
+              </button>
+            )}
+
             <button
               onClick={fetchClassAttendance}
               disabled={isLoading}
@@ -399,62 +541,110 @@ export const AttendanceView: React.FC = () => {
               className="px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
-              <span>{isSaving ? 'Đang lưu...' : hasUnsavedChanges ? 'Lưu thay đổi' : 'Lưu bảng điểm danh'}</span>
+              <span>{isSaving ? 'Đang lưu...' : hasUnsavedChanges ? 'Lưu điểm danh' : 'Lưu điểm danh'}</span>
             </button>
           </div>
         </div>
 
-        {/* Harmonious Minimalist Stat Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-outline-variant/20">
-          {/* Card 1 */}
-          <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center font-semibold shrink-0">
-              <Users className="w-4 h-4" />
+        {/* ========================================================================= */}
+        {/* STAT CARDS CHO CHẾ ĐỘ MẶC ĐỊNH (HÔM NAY) */}
+        {/* ========================================================================= */}
+        {viewMode === 'TODAY' ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-outline-variant/20">
+            {/* Sĩ số */}
+            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center font-semibold shrink-0">
+                <Users className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] text-on-surface-variant font-medium">Tổng sĩ số</div>
+                <div className="text-base font-bold text-on-surface mt-0.5">{todayStats.totalStudents} <span className="text-xs font-normal text-outline">em</span></div>
+              </div>
             </div>
-            <div>
-              <div className="text-[11px] text-on-surface-variant font-medium">Tổng sĩ số</div>
-              <div className="text-base font-bold text-on-surface mt-0.5">{stats.totalStudents} <span className="text-xs font-normal text-outline">em</span></div>
-            </div>
-          </div>
 
-          {/* Card 2 */}
-          <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-surface-container text-emerald-700 flex items-center justify-center font-semibold shrink-0">
-              <UserCheck className="w-4 h-4" />
+            {/* Có mặt */}
+            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-semibold shrink-0">
+                <UserCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] text-emerald-700 font-medium">Có mặt hôm nay</div>
+                <div className="text-base font-bold text-emerald-700 mt-0.5">{todayStats.presentToday} <span className="text-xs font-normal text-outline">em</span></div>
+              </div>
             </div>
-            <div>
-              <div className="text-[11px] text-on-surface-variant font-medium">Chuyên cần 100%</div>
-              <div className="text-base font-bold text-emerald-800 mt-0.5">{stats.fullAttendanceStudents} <span className="text-xs font-normal text-outline">em</span></div>
-            </div>
-          </div>
 
-          {/* Card 3 */}
-          <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-surface-container text-amber-700 flex items-center justify-center font-semibold shrink-0">
-              <UserX className="w-4 h-4" />
+            {/* Vắng có phép (VP) */}
+            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 font-bold text-xs flex items-center justify-center shrink-0 border border-emerald-200">
+                VP
+              </div>
+              <div>
+                <div className="text-[11px] text-on-surface-variant font-medium">Vắng có phép</div>
+                <div className="text-base font-bold text-emerald-600 mt-0.5">{todayStats.absentWithPerm} <span className="text-xs font-normal text-outline">em</span></div>
+              </div>
             </div>
-            <div>
-              <div className="text-[11px] text-on-surface-variant font-medium">Có vắng mặt</div>
-              <div className="text-base font-bold text-on-surface mt-0.5">{stats.absentStudents} <span className="text-xs font-normal text-outline">em</span></div>
-            </div>
-          </div>
 
-          {/* Card 4 */}
-          <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center font-semibold shrink-0">
-              <Calendar className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[11px] text-on-surface-variant font-medium">Tổng ngày vắng</div>
-              <div className="text-base font-bold text-on-surface mt-0.5">{stats.totalAbsenceDays} <span className="text-xs font-normal text-outline">buổi</span></div>
+            {/* Vắng không phép (V) */}
+            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 font-bold text-xs flex items-center justify-center shrink-0 border border-rose-200">
+                V
+              </div>
+              <div>
+                <div className="text-[11px] text-on-surface-variant font-medium">Vắng không phép</div>
+                <div className="text-base font-bold text-rose-600 mt-0.5">{todayStats.absentWithoutPerm} <span className="text-xs font-normal text-outline">em</span></div>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          /* ========================================================================= */
+          /* STAT CARDS CHO CHẾ ĐỘ ĐIỂM DANH SAU (CẢ NĂM) */
+          /* ========================================================================= */
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-outline-variant/20">
+            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center font-semibold shrink-0">
+                <Users className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] text-on-surface-variant font-medium">Tổng sĩ số</div>
+                <div className="text-base font-bold text-on-surface mt-0.5">{fullYearStats.totalStudents} <span className="text-xs font-normal text-outline">em</span></div>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-surface-container text-emerald-700 flex items-center justify-center font-semibold shrink-0">
+                <UserCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] text-on-surface-variant font-medium">Chuyên cần 100%</div>
+                <div className="text-base font-bold text-emerald-800 mt-0.5">{fullYearStats.fullAttendanceStudents} <span className="text-xs font-normal text-outline">em</span></div>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-surface-container text-amber-700 flex items-center justify-center font-semibold shrink-0">
+                <UserX className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] text-on-surface-variant font-medium">Có vắng mặt</div>
+                <div className="text-base font-bold text-on-surface mt-0.5">{fullYearStats.absentStudents} <span className="text-xs font-normal text-outline">em</span></div>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center font-semibold shrink-0">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] text-on-surface-variant font-medium">Tổng ngày vắng</div>
+                <div className="text-base font-bold text-on-surface mt-0.5">{fullYearStats.totalAbsenceDays} <span className="text-xs font-normal text-outline">buổi</span></div>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Filter & Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        {/* Class Selector for Admin */}
         {currentRole === 'admin' ? (
           <div className="flex items-center gap-2 bg-surface-container-lowest px-3 py-2 rounded-xl border border-outline-variant/30 w-full sm:w-auto shadow-2xs">
             <Filter className="w-4 h-4 text-on-surface-variant shrink-0" />
@@ -473,7 +663,7 @@ export const AttendanceView: React.FC = () => {
           </div>
         ) : (
           <div className="text-xs text-on-surface-variant">
-            Danh sách học sinh lớp <span className="font-semibold text-on-surface">{activeClass?.name}</span> ({stats.totalStudents} em)
+            Danh sách học sinh lớp <span className="font-semibold text-on-surface">{activeClass?.name}</span> ({todayStats.totalStudents} em)
           </div>
         )}
 
@@ -498,239 +688,346 @@ export const AttendanceView: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Attendance Table with Sticky Scrolling (Giống Ảnh 1) */}
-      <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto relative max-h-[72vh]">
-          <table className="w-full text-left border-collapse text-xs">
-            {/* Table Header */}
-            <thead className="sticky top-0 z-30 bg-surface-container-low border-b border-outline-variant/30 text-on-surface font-semibold">
-              <tr>
-                {/* 1. STT (Sticky Left Column 1) */}
-                <th className="p-3 text-center w-12 sticky left-0 bg-surface-container-low z-40 border-r border-outline-variant/20">
-                  STT
-                </th>
+      {/* ========================================================================= */}
+      {/* 1. GIAO DIỆN MẶC ĐỊNH: ĐIỂM DANH NHANH HÔM NAY (3 CỘT: STT, TÊN THÁNH HỌ VÀ TÊN, TICK) */}
+      {/* ========================================================================= */}
+      {viewMode === 'TODAY' && (
+        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-xs overflow-hidden">
+          {/* Hướng dẫn ký hiệu nhỏ gọn */}
+          <div className="p-2.5 sm:p-3 bg-surface-container-low/40 border-b border-outline-variant/20 flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs text-on-surface-variant">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-4">
+              <span className="font-semibold text-on-surface hidden xs:inline">Ký hiệu:</span>
+              <span className="flex items-center gap-1">
+                <span className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center bg-rose-50 text-rose-600 font-bold border border-rose-300 text-[10px] sm:text-[11px]">V</span>
+                <span>Vắng không phép</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center bg-emerald-50 text-emerald-600 font-bold border border-emerald-300 text-[10px] sm:text-[11px]">VP</span>
+                <span>Vắng có phép</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center bg-white border border-outline-variant/40 text-[10px]"></span>
+                <span>Ô trống = Đi học</span>
+              </span>
+            </div>
+            <div className="text-[10px] sm:text-[11px] text-outline italic">
+              * Không tick tức là đi học
+            </div>
+          </div>
 
-                {/* 2. Tên Thánh & Họ Và Tên (Sticky Left Column 2) */}
-                <th className="p-3 min-w-[220px] sticky left-12 bg-surface-container-low z-40 border-r border-outline-variant/20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
-                  TÊN THÁNH &amp; HỌ VÀ TÊN
-                </th>
-
-                {/* 3. Giới tính */}
-                <th className="p-3 text-center w-24">
-                  GIỚI TÍNH
-                </th>
-
-                {/* 4. Số ngày nghỉ */}
-                <th className="p-3 text-center w-36">
-                  SỐ NGÀY NGHỈ
-                </th>
-
-                {/* 5. Chi tiết các ngày nghỉ */}
-                <th className="p-3 min-w-[460px]">
-                  CHI TIẾT CÁC NGÀY NGHỈ (NGÀY, LOẠI PHÉP, BUỔI &amp; GHI CHÚ)
-                </th>
-
-                {/* 6. Thao tác */}
-                <th className="p-3 text-center w-24">
-                  THAO TÁC
-                </th>
-              </tr>
-            </thead>
-
-            {/* Table Body */}
-            <tbody className="divide-y divide-outline-variant/20 bg-surface-container-lowest">
-              {isLoading ? (
+          {/* Bảng điểm danh tối ưu vừa khít cho Mobile */}
+          <div className="w-full">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead className="bg-surface-container-low border-b border-outline-variant/30 text-on-surface font-semibold">
                 <tr>
-                  <td colSpan={6} className="p-10 text-center text-on-surface-variant">
-                    <div className="flex items-center justify-center gap-2 text-xs">
-                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      <span>Đang tải danh sách học sinh &amp; dữ liệu điểm danh...</span>
-                    </div>
-                  </td>
+                  <th className="py-2.5 px-2 text-center w-10 sm:w-12 border-r border-outline-variant/20 text-[11px] sm:text-xs">
+                    STT
+                  </th>
+                  <th className="py-2.5 px-2.5 sm:px-3 text-[11px] sm:text-xs">
+                    TÊN THÁNH, HỌ VÀ TÊN
+                  </th>
+                  <th className="py-2.5 px-2 text-center w-18 sm:w-24 text-[11px] sm:text-xs">
+                    <span className="block leading-tight">ĐIỂM DANH</span>
+                    <span className="text-[10px] font-normal text-outline block sm:inline">({formatDisplayDate(todayDateStr)})</span>
+                  </th>
                 </tr>
-              ) : filteredStudentRows.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-10 text-center text-on-surface-variant text-xs">
-                    Không tìm thấy học sinh nào phù hợp với từ khóa &quot;{searchQuery}&quot;
-                  </td>
-                </tr>
-              ) : (
-                filteredStudentRows.map((row, idx) => {
-                  const isFemale = row.gender === 'Nữ';
+              </thead>
 
-                  return (
-                    <tr
-                      key={row.studentId}
-                      className={`hover:bg-surface-container-low/40 transition-colors ${
-                        row.isDirty ? 'bg-amber-50/30' : ''
-                      }`}
-                    >
-                      {/* Column 1: STT (Sticky) */}
-                      <td className="p-3 text-center font-medium text-outline sticky left-0 bg-surface-container-lowest group-hover:bg-surface-container-low/40 z-20 border-r border-outline-variant/20">
-                        {idx + 1}
-                      </td>
+              <tbody className="divide-y divide-outline-variant/20 bg-surface-container-lowest">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={3} className="p-8 text-center text-on-surface-variant">
+                      <div className="flex items-center justify-center gap-2 text-xs">
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <span>Đang tải danh sách học sinh...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredStudentRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="p-8 text-center text-on-surface-variant text-xs">
+                      Không tìm thấy học sinh nào phù hợp với từ khóa &quot;{searchQuery}&quot;
+                    </td>
+                  </tr>
+                ) : (
+                  filteredStudentRows.map((row, idx) => {
+                    const status = getTodayStatus(row.studentId);
 
-                      {/* Column 2: Tên Thánh & Họ Và Tên (Sticky) */}
-                      <td className="p-3 sticky left-12 bg-surface-container-lowest group-hover:bg-surface-container-low/40 z-20 border-r border-outline-variant/20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
-                        <div className="flex items-center space-x-2.5">
-                          <GenderAvatar
-                            gender={row.gender}
-                            className="w-8 h-8 rounded-full ring-1 ring-outline-variant/30 shrink-0"
-                          />
-                          <div>
-                            <div className="font-semibold text-on-surface text-xs leading-snug">
-                              <span className="text-primary font-bold">{row.holyName}</span> {row.fullName}
-                            </div>
-                            <div className="text-[10px] text-outline font-mono">
-                              #{row.code}
-                            </div>
+                    return (
+                      <tr
+                        key={row.studentId}
+                        className={`hover:bg-surface-container-low/40 transition-colors ${
+                          status === 'V'
+                            ? 'bg-rose-50/25'
+                            : status === 'VP'
+                            ? 'bg-emerald-50/25'
+                            : row.isDirty
+                            ? 'bg-amber-50/20'
+                            : ''
+                        }`}
+                      >
+                        {/* 1. STT */}
+                        <td className="py-2.5 px-2 text-center font-medium text-outline border-r border-outline-variant/20 text-[11px] sm:text-xs">
+                          {idx + 1}
+                        </td>
+
+                        {/* 2. Tên Thánh, Họ và Tên (Đã bỏ Avatar để tối ưu chiều ngang) */}
+                        <td className="py-2.5 px-2.5 sm:px-3">
+                          <div className="leading-tight">
+                            <span className="text-primary font-bold text-xs sm:text-sm">{row.holyName}</span>{' '}
+                            <span className="text-on-surface font-semibold text-xs sm:text-sm">{row.fullName}</span>
                           </div>
-                        </div>
-                      </td>
-
-                      {/* Column 3: Giới tính */}
-                      <td className="p-3 text-center">
-                        <span
-                          className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${
-                            isFemale
-                              ? 'bg-rose-50/70 text-rose-700 border-rose-200/60'
-                              : 'bg-sky-50/70 text-sky-700 border-sky-200/60'
-                          }`}
-                        >
-                          {row.gender}
-                        </span>
-                      </td>
-
-                      {/* Column 4: Số ngày nghỉ */}
-                      <td className="p-3 text-center">
-                        <select
-                          value={row.absentCount}
-                          onChange={(e) => handleAbsentCountChange(row.studentId, parseInt(e.target.value, 10))}
-                          aria-label={`Số ngày nghỉ của em ${row.holyName} ${row.fullName}`}
-                          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-container-low border border-outline-variant/30 text-on-surface outline-none cursor-pointer hover:border-primary/40 focus:border-primary transition-colors"
-                        >
-                          {[...Array(16)].map((_, i) => (
-                            <option key={i} value={i}>
-                              {i === 0 ? '0 ngày (Đi đủ)' : `${i} ngày nghỉ`}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-
-                      {/* Column 5: Chi tiết các ngày nghỉ */}
-                      <td className="p-3">
-                        {row.absentCount === 0 ? (
-                          <div className="text-on-surface-variant text-xs py-1 flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            <span className="text-emerald-700 font-medium">Đi học đầy đủ</span>
+                          <div className="text-[10px] text-outline font-mono mt-0.5">
+                            #{row.code}
                           </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {row.absences.map((abs, absIdx) => (
-                              <div
-                                key={absIdx}
-                                className="p-2 rounded-lg bg-surface-container-low/70 border border-outline-variant/25 flex flex-wrap items-center gap-2 text-xs"
-                              >
-                                <span className="font-semibold text-outline text-[11px] w-5 text-center shrink-0">
-                                  #{absIdx + 1}
-                                </span>
+                        </td>
 
-                                {/* Ngày vắng */}
-                                <input
-                                  type="date"
-                                  value={abs.date}
-                                  onChange={(e) =>
-                                    handleAbsenceDetailChange(row.studentId, absIdx, 'date', e.target.value)
-                                  }
-                                  className="bg-surface-container-lowest px-2 py-1 rounded-md border border-outline-variant/30 text-xs text-on-surface outline-none focus:border-primary/60"
-                                />
-
-                                {/* Phân loại phép / không phép */}
-                                <select
-                                  value={abs.status}
-                                  onChange={(e) =>
-                                    handleAbsenceDetailChange(row.studentId, absIdx, 'status', e.target.value)
-                                  }
-                                  className={`px-2 py-1 rounded-md text-xs font-medium border outline-none cursor-pointer ${
-                                    abs.status === 'VANG_CO_PHEP'
-                                      ? 'bg-amber-50 text-amber-900 border-amber-200'
-                                      : 'bg-rose-50 text-rose-900 border-rose-200'
-                                  }`}
-                                >
-                                  <option value="VANG_CO_PHEP">Có phép</option>
-                                  <option value="VANG_KHONG_PHEP">Không phép</option>
-                                </select>
-
-                                {/* Loại buổi */}
-                                <select
-                                  value={abs.type}
-                                  onChange={(e) =>
-                                    handleAbsenceDetailChange(row.studentId, absIdx, 'type', e.target.value)
-                                  }
-                                  className="bg-surface-container-lowest px-2 py-1 rounded-md border border-outline-variant/30 text-xs text-on-surface outline-none cursor-pointer"
-                                >
-                                  <option value="LE_CHUA_NHAT">Thánh Lễ Chúa Nhật</option>
-                                  <option value="GIO_GIAO_LY">Giờ Học Giáo Lý</option>
-                                </select>
-
-                                {/* Ghi chú lý do */}
-                                <input
-                                  type="text"
-                                  value={abs.notes || ''}
-                                  onChange={(e) =>
-                                    handleAbsenceDetailChange(row.studentId, absIdx, 'notes', e.target.value)
-                                  }
-                                  placeholder="Lý do nghỉ..."
-                                  className="flex-1 min-w-[110px] bg-surface-container-lowest px-2 py-1 rounded-md border border-outline-variant/30 text-xs text-on-surface placeholder:text-outline outline-none focus:border-primary/60"
-                                />
-
-                                {/* Nút xóa ngày nghỉ này */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveAbsence(row.studentId, absIdx)}
-                                  title="Xóa ngày nghỉ này"
-                                  className="p-1 rounded text-outline hover:text-customError hover:bg-surface-container transition-colors cursor-pointer shrink-0"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ))}
-
+                        {/* 3. Ô Tick Điểm Danh Thu Nhỏ Vừa Khít (Đi học thì để trống) */}
+                        <td className="py-2 px-2 text-center">
+                          <div className="flex justify-center">
                             <button
                               type="button"
-                              onClick={() => handleAddAbsenceQuick(row.studentId)}
-                              className="text-[11px] font-medium text-primary hover:underline flex items-center gap-1 cursor-pointer pt-0.5"
+                              onClick={() => handleCycleTodayAttendance(row.studentId)}
+                              title="Nhấn để đổi trạng thái: V (Vắng không phép) -> VP (Vắng có phép) -> Đi học"
+                              className={`w-12 sm:w-16 h-7 sm:h-8 rounded-lg font-bold transition-all duration-150 flex items-center justify-center shadow-2xs select-none cursor-pointer active:scale-95 ${
+                                status === 'V'
+                                  ? 'bg-rose-50 text-rose-600 border border-rose-400 hover:bg-rose-100 text-xs sm:text-sm'
+                                  : status === 'VP'
+                                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-400 hover:bg-emerald-100 text-xs sm:text-sm'
+                                  : 'bg-white hover:bg-surface-container-low text-transparent border border-outline-variant/40 hover:border-primary/40'
+                              }`}
                             >
-                              <Plus className="w-3 h-3" />
-                              <span>Thêm ngày nghỉ</span>
+                              {status === 'V' ? (
+                                <span className="font-extrabold tracking-wider">V</span>
+                              ) : status === 'VP' ? (
+                                <span className="font-extrabold tracking-wider">VP</span>
+                              ) : null}
                             </button>
                           </div>
-                        )}
-                      </td>
-
-                      {/* Column 6: Thao tác / Lưu riêng */}
-                      <td className="p-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleSaveSingle(row.studentId)}
-                          disabled={!row.isDirty}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                            row.isDirty
-                              ? 'bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-2xs'
-                              : 'bg-surface-container-low text-outline cursor-default opacity-50'
-                          }`}
-                        >
-                          {row.isDirty ? 'Lưu' : 'Đã lưu'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 2. GIAO DIỆN "ĐIỂM DANH SAU": THỦ CÔNG ĐẦY ĐỦ TỪNG NGÀY & GHI CHÚ NHƯ CŨ */}
+      {/* ========================================================================= */}
+      {viewMode === 'MANUAL' && (
+        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto relative max-h-[72vh]">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead className="sticky top-0 z-30 bg-surface-container-low border-b border-outline-variant/30 text-on-surface font-semibold">
+                <tr>
+                  <th className="p-3 text-center w-12 sticky left-0 bg-surface-container-low z-40 border-r border-outline-variant/20">
+                    STT
+                  </th>
+                  <th className="p-3 min-w-[220px] sticky left-12 bg-surface-container-low z-40 border-r border-outline-variant/20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                    TÊN THÁNH &amp; HỌ VÀ TÊN
+                  </th>
+                  <th className="p-3 text-center w-24">
+                    GIỚI TÍNH
+                  </th>
+                  <th className="p-3 text-center w-36">
+                    SỐ NGÀY NGHỈ
+                  </th>
+                  <th className="p-3 min-w-[360px]">
+                    CHI TIẾT CÁC NGÀY NGHỈ (NGÀY, LOẠI PHÉP &amp; GHI CHÚ)
+                  </th>
+                  <th className="p-3 text-center w-24">
+                    THAO TÁC
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-outline-variant/20 bg-surface-container-lowest">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="p-10 text-center text-on-surface-variant">
+                      <div className="flex items-center justify-center gap-2 text-xs">
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <span>Đang tải danh sách học sinh &amp; dữ liệu điểm danh...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredStudentRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-10 text-center text-on-surface-variant text-xs">
+                      Không tìm thấy học sinh nào phù hợp với từ khóa &quot;{searchQuery}&quot;
+                    </td>
+                  </tr>
+                ) : (
+                  filteredStudentRows.map((row, idx) => {
+                    const isFemale = row.gender === 'Nữ';
+
+                    return (
+                      <tr
+                        key={row.studentId}
+                        className={`hover:bg-surface-container-low/40 transition-colors ${
+                          row.isDirty ? 'bg-amber-50/30' : ''
+                        }`}
+                      >
+                        {/* Column 1: STT */}
+                        <td className="p-3 text-center font-medium text-outline sticky left-0 bg-surface-container-lowest group-hover:bg-surface-container-low/40 z-20 border-r border-outline-variant/20">
+                          {idx + 1}
+                        </td>
+
+                        {/* Column 2: Tên Thánh & Họ Và Tên */}
+                        <td className="p-3 sticky left-12 bg-surface-container-lowest group-hover:bg-surface-container-low/40 z-20 border-r border-outline-variant/20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                          <div className="flex items-center space-x-2.5">
+                            <GenderAvatar
+                              gender={row.gender}
+                              className="w-8 h-8 rounded-full ring-1 ring-outline-variant/30 shrink-0"
+                            />
+                            <div>
+                              <div className="font-semibold text-on-surface text-xs leading-snug">
+                                <span className="text-primary font-bold">{row.holyName}</span> {row.fullName}
+                              </div>
+                              <div className="text-[10px] text-outline font-mono">
+                                #{row.code}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Column 3: Giới tính */}
+                        <td className="p-3 text-center">
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${
+                              isFemale
+                                ? 'bg-rose-50/70 text-rose-700 border-rose-200/60'
+                                : 'bg-sky-50/70 text-sky-700 border-sky-200/60'
+                            }`}
+                          >
+                            {row.gender}
+                          </span>
+                        </td>
+
+                        {/* Column 4: Số ngày nghỉ */}
+                        <td className="p-3 text-center">
+                          <select
+                            value={row.absentCount}
+                            onChange={(e) => handleAbsentCountChange(row.studentId, parseInt(e.target.value, 10))}
+                            aria-label={`Số ngày nghỉ của em ${row.holyName} ${row.fullName}`}
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-container-low border border-outline-variant/30 text-on-surface outline-none cursor-pointer hover:border-primary/40 focus:border-primary transition-colors"
+                          >
+                            {[...Array(16)].map((_, i) => (
+                              <option key={i} value={i}>
+                                {i === 0 ? '0 ngày (Đi đủ)' : `${i} ngày nghỉ`}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+
+                        {/* Column 5: Chi tiết các ngày nghỉ */}
+                        <td className="p-3">
+                          {row.absentCount === 0 ? (
+                            <div className="text-on-surface-variant text-xs py-1 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              <span className="text-emerald-700 font-medium">Đi học đầy đủ</span>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {row.absences.map((abs, absIdx) => (
+                                <div
+                                  key={absIdx}
+                                  className="p-2 rounded-lg bg-surface-container-low/70 border border-outline-variant/25 flex flex-wrap items-center gap-2 text-xs"
+                                >
+                                  <span className="font-semibold text-outline text-[11px] w-5 text-center shrink-0">
+                                    #{absIdx + 1}
+                                  </span>
+
+                                  {/* Ngày vắng */}
+                                  <input
+                                    type="date"
+                                    value={abs.date}
+                                    onChange={(e) =>
+                                      handleAbsenceDetailChange(row.studentId, absIdx, 'date', e.target.value)
+                                    }
+                                    className="bg-surface-container-lowest px-2 py-1 rounded-md border border-outline-variant/30 text-xs text-on-surface outline-none focus:border-primary/60"
+                                  />
+
+                                  {/* Phân loại phép / không phép */}
+                                  <select
+                                    value={abs.status}
+                                    onChange={(e) =>
+                                      handleAbsenceDetailChange(row.studentId, absIdx, 'status', e.target.value)
+                                    }
+                                    className={`px-2 py-1 rounded-md text-xs font-medium border outline-none cursor-pointer ${
+                                      abs.status === 'VANG_CO_PHEP'
+                                        ? 'bg-amber-50 text-amber-900 border-amber-200'
+                                        : 'bg-rose-50 text-rose-900 border-rose-200'
+                                    }`}
+                                  >
+                                    <option value="VANG_CO_PHEP">Có phép</option>
+                                    <option value="VANG_KHONG_PHEP">Không phép</option>
+                                  </select>
+
+                                  {/* Ghi chú lý do */}
+                                  <input
+                                    type="text"
+                                    value={abs.notes || ''}
+                                    onChange={(e) =>
+                                      handleAbsenceDetailChange(row.studentId, absIdx, 'notes', e.target.value)
+                                    }
+                                    placeholder="Lý do nghỉ..."
+                                    className="flex-1 min-w-[130px] bg-surface-container-lowest px-2 py-1 rounded-md border border-outline-variant/30 text-xs text-on-surface placeholder:text-outline outline-none focus:border-primary/60"
+                                  />
+
+                                  {/* Nút xóa ngày nghỉ này */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveAbsence(row.studentId, absIdx)}
+                                    title="Xóa ngày nghỉ này"
+                                    className="p-1 rounded text-outline hover:text-customError hover:bg-surface-container transition-colors cursor-pointer shrink-0"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ))}
+
+                              <button
+                                type="button"
+                                onClick={() => handleAddAbsenceQuick(row.studentId)}
+                                className="text-[11px] font-medium text-primary hover:underline flex items-center gap-1 cursor-pointer pt-0.5"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>Thêm ngày nghỉ</span>
+                              </button>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Column 6: Thao tác / Lưu riêng */}
+                        <td className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveSingle(row.studentId)}
+                            disabled={!row.isDirty}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                              row.isDirty
+                                ? 'bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-2xs'
+                                : 'bg-surface-container-low text-outline cursor-default opacity-50'
+                            }`}
+                          >
+                            {row.isDirty ? 'Lưu' : 'Đã lưu'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

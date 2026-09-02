@@ -159,11 +159,6 @@ model GradeRecord {
 }
 
 // 5. Điểm Danh Chuyên Cần
-enum AttendanceType {
-  LE_CHUA_NHAT    // Thánh Lễ Chúa Nhật
-  GIO_GIAO_LY     // Giờ Học Giáo Lý
-}
-
 enum AttendanceStatus {
   CO_MAT          // Có mặt
   VANG_CO_PHEP    // Vắng có phép
@@ -175,7 +170,6 @@ model Attendance {
   studentId   String
   student     Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
   date        String            // YYYY-MM-DD
-  type        AttendanceType    @default(LE_CHUA_NHAT)
   status      AttendanceStatus  @default(CO_MAT)
   notes       String?
   createdAt   DateTime          @default(now())

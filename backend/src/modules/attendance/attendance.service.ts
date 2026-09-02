@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { AttendanceType, AttendanceStatus } from '@prisma/client';
+import { AttendanceStatus } from '@prisma/client';
 
 export interface AbsenceItemDto {
   date: string;
-  type?: AttendanceType;
   status: AttendanceStatus;
   notes?: string;
 }
@@ -48,7 +47,6 @@ export class AttendanceService {
   async markAttendance(data: {
     studentId: string;
     date: string;
-    type?: AttendanceType;
     status?: AttendanceStatus;
     notes?: string;
   }) {
@@ -56,7 +54,6 @@ export class AttendanceService {
       data: {
         studentId: data.studentId,
         date: data.date,
-        type: data.type || AttendanceType.LE_CHUA_NHAT,
         status: data.status || AttendanceStatus.VANG_CO_PHEP,
         notes: data.notes || '',
       },
@@ -85,7 +82,6 @@ export class AttendanceService {
     const recordsToInsert: {
       studentId: string;
       date: string;
-      type: AttendanceType;
       status: AttendanceStatus;
       notes?: string;
     }[] = [];
@@ -96,7 +92,6 @@ export class AttendanceService {
           recordsToInsert.push({
             studentId: student.studentId,
             date: abs.date.trim(),
-            type: abs.type || AttendanceType.LE_CHUA_NHAT,
             status: abs.status || AttendanceStatus.VANG_CO_PHEP,
             notes: abs.notes || '',
           });

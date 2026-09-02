@@ -398,18 +398,17 @@ export const ParentPortal: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-outline-variant/20">
               <h3 className="text-sm font-bold text-on-surface flex items-center gap-2 font-sans">
                 <CalendarCheck className="w-4 h-4 text-primary" />
-                <span>Chuyên Cần Đi Lễ &amp; Học Giáo Lý</span>
+                <span>Chuyên Cần &amp; Ngày Nghỉ Giáo Lý</span>
               </h3>
             </div>
             <div className="mt-4 space-y-2.5 max-h-[380px] overflow-y-auto">
               {attendanceRecords.length === 0 ? (
                 <div className="py-8 text-center text-xs text-on-surface-variant space-y-2">
                   <AlertCircle className="w-6 h-6 text-outline mx-auto" />
-                  <p>Đang trong quá trình ghi nhận chuyên cần các Chúa Nhật.</p>
+                  <p>Đang trong quá trình ghi nhận chuyên cần các buổi học.</p>
                 </div>
               ) : (
                 attendanceRecords.map((att) => {
-                  const typeLabel = att.type === 'LE_CHUA_NHAT' || att.type === 'Lễ Chúa Nhật' ? 'Thánh Lễ Chúa Nhật' : 'Giờ Học Giáo Lý';
                   const isPresent = att.status === 'CO_MAT' || att.status === 'Có mặt';
                   const isPermitted = att.status === 'VANG_CO_PHEP' || att.status === 'Vắng có phép';
                   const statusLabel = isPresent ? 'Có mặt' : isPermitted ? 'Vắng có phép' : 'Vắng không phép';
@@ -418,9 +417,8 @@ export const ParentPortal: React.FC = () => {
                   return (
                     <div key={att.id} className="p-3 rounded-xl bg-surface-container-low flex items-center justify-between text-xs">
                       <div>
-                        <div className="font-bold text-on-surface">{typeLabel}</div>
-                        <div className="text-[11px] text-outline">{att.date}</div>
-                        {att.notes && <div className="text-[10px] text-on-surface-variant italic mt-0.5">• {att.notes}</div>}
+                        <div className="font-bold text-on-surface">Buổi học ngày {att.date}</div>
+                        {att.notes && <div className="text-[11px] text-on-surface-variant italic mt-0.5">• {att.notes}</div>}
                       </div>
                       <div>
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${statusBadgeClass}`}>

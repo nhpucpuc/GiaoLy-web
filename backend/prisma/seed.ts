@@ -296,10 +296,9 @@ async function main() {
 
   // 7. Tạo Lịch sử Chuyên cần
   const attData = [
-    { studentId: 'std-001', date: '2026-08-24', type: 'LE_CHUA_NHAT' as any, status: 'CO_MAT' as any },
-    { studentId: 'std-001', date: '2026-08-24', type: 'GIO_GIAO_LY' as any, status: 'CO_MAT' as any },
-    { studentId: 'std-001', date: '2026-08-17', type: 'LE_CHUA_NHAT' as any, status: 'CO_MAT' as any },
-    { studentId: 'std-001', date: '2026-08-10', type: 'GIO_GIAO_LY' as any, status: 'VANG_CO_PHEP' as any, notes: 'Gia đình về quê' },
+    { studentId: 'std-001', date: '2026-08-24', status: 'CO_MAT' as any },
+    { studentId: 'std-001', date: '2026-08-17', status: 'CO_MAT' as any },
+    { studentId: 'std-001', date: '2026-08-10', status: 'VANG_CO_PHEP' as any, notes: 'Gia đình về quê' },
   ];
 
   for (const a of attData) {
