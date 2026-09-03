@@ -18,7 +18,6 @@ import {
 import { useApp } from '../../context/AppContext';
 import { Student, GradeRecord } from '../../types';
 import { RankBadge } from '../shared/RankBadge';
-import { GenderAvatar } from '../shared/GenderAvatar';
 import { getFullCatechistNames } from '../../utils/catechistHelper';
 import { formatToDDMMYYYY } from '../../utils/dateUtils';
 import { api } from '../../services/api';
@@ -217,11 +216,7 @@ export const AdminStudentDetailView: React.FC = () => {
         <div className="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-primary-container/20 blur-xl pointer-events-none"></div>
 
         <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 relative z-10">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-5 text-center sm:text-left">
-            <GenderAvatar
-              gender={currentStudent.gender}
-              className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl ring-4 ring-primary-container/30 shadow-md"
-            />
+          <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-1.5">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 mb-1 flex-wrap justify-center sm:justify-start">
                 <span className="px-3 py-1 rounded-full bg-surface-container-high text-primary font-bold text-xs">

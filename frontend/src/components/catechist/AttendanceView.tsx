@@ -17,7 +17,6 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { GenderAvatar } from '../shared/GenderAvatar';
 import { api } from '../../services/api';
 
 export interface AbsenceItem {
@@ -209,62 +208,6 @@ export const AttendanceView: React.FC = () => {
   // =========================================================================
   // CÁC HÀM XỬ LÝ CHẾ ĐỘ "ĐIỂM DANH SAU" (THỦ CÔNG)
   // =========================================================================
-  const handleAbsentCountChange = (studentId: string, count: number) => {
-    const current = attendanceData[studentId];
-    if (!current) return;
-
-    const newCount = Math.max(0, Math.min(20, count));
-    const currentLen = current.absences.length;
-
-    if (newCount === currentLen) return;
-
-    if (newCount < currentLen) {
-      const willBeRemoved = current.absences.slice(newCount);
-      const hasDetailedData = willBeRemoved.some(
-        (a) => (a.notes && a.notes.trim() !== '') || a.status === 'VANG_KHONG_PHEP'
-      );
-
-      if (hasDetailedData || currentLen >= 2) {
-        const isConfirmed = window.confirm(
-          `Em ${current.holyName} ${current.fullName} đang có ${currentLen} ngày nghỉ chi tiết. Bạn có chắc chắn muốn giảm xuống còn ${newCount} ngày không? (${currentLen - newCount} ngày nghỉ phía sau sẽ bị bỏ).`
-        );
-        if (!isConfirmed) {
-          return;
-        }
-      }
-    }
-
-    setAttendanceData((prev) => {
-      const row = prev[studentId];
-      if (!row) return prev;
-
-      let newAbsences = [...row.absences];
-
-      if (newCount > row.absences.length) {
-        const diff = newCount - row.absences.length;
-        for (let i = 0; i < diff; i++) {
-          newAbsences.push({
-            date: todayDateStr,
-            status: 'VANG_CO_PHEP',
-            notes: '',
-          });
-        }
-      } else if (newCount < row.absences.length) {
-        newAbsences = newAbsences.slice(0, newCount);
-      }
-
-      return {
-        ...prev,
-        [studentId]: {
-          ...row,
-          absentCount: newCount,
-          absences: newAbsences,
-          isDirty: true,
-        },
-      };
-    });
-  };
-
   const handleAbsenceDetailChange = (
     studentId: string,
     index: number,
@@ -879,18 +822,12 @@ export const AttendanceView: React.FC = () => {
 
                         {/* Column 2: Tên Thánh & Họ Và Tên */}
                         <td className="p-3 sticky left-12 bg-surface-container-lowest group-hover:bg-surface-container-low/40 z-20 border-r border-outline-variant/20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
-                          <div className="flex items-center space-x-2.5">
-                            <GenderAvatar
-                              gender={row.gender}
-                              className="w-8 h-8 rounded-full ring-1 ring-outline-variant/30 shrink-0"
-                            />
-                            <div>
-                              <div className="font-semibold text-on-surface text-xs leading-snug">
-                                <span className="text-primary font-bold">{row.holyName}</span> {row.fullName}
-                              </div>
-                              <div className="text-[10px] text-outline font-mono">
-                                #{row.code}
-                              </div>
+                          <div>
+                            <div className="font-semibold text-on-surface text-xs leading-snug">
+                              <span className="text-primary font-bold">{row.holyName}</span> {row.fullName}
+                            </div>
+                            <div className="text-[10px] text-outline font-mono">
+                              #{row.code}
                             </div>
                           </div>
                         </td>
@@ -908,28 +845,35 @@ export const AttendanceView: React.FC = () => {
                           </span>
                         </td>
 
-                        {/* Column 4: Số ngày nghỉ */}
+                        {/* Column 4: Số ngày nghỉ (Chỉ hiển thị tổng số ngày nghỉ) */}
                         <td className="p-3 text-center">
-                          <select
-                            value={row.absentCount}
-                            onChange={(e) => handleAbsentCountChange(row.studentId, parseInt(e.target.value, 10))}
-                            aria-label={`Số ngày nghỉ của em ${row.holyName} ${row.fullName}`}
-                            className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-container-low border border-outline-variant/30 text-on-surface outline-none cursor-pointer hover:border-primary/40 focus:border-primary transition-colors"
+                          <span
+                            className={`inline-flex items-center justify-center px-3 py-1 rounded-lg text-xs font-bold border ${
+                              row.absences.length === 0
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-amber-50 text-amber-800 border-amber-200'
+                            }`}
                           >
-                            {[...Array(16)].map((_, i) => (
-                              <option key={i} value={i}>
-                                {i === 0 ? '0 ngày (Đi đủ)' : `${i} ngày nghỉ`}
-                              </option>
-                            ))}
-                          </select>
+                            {row.absences.length === 0 ? '0 ngày' : `${row.absences.length} ngày`}
+                          </span>
                         </td>
 
-                        {/* Column 5: Chi tiết các ngày nghỉ */}
+                        {/* Column 5: Chi tiết các ngày nghỉ & Nút Thêm ngày nghỉ */}
                         <td className="p-3">
-                          {row.absentCount === 0 ? (
-                            <div className="text-on-surface-variant text-xs py-1 flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                              <span className="text-emerald-700 font-medium">Đi học đầy đủ</span>
+                          {row.absences.length === 0 ? (
+                            <div className="flex items-center justify-between gap-3 py-1">
+                              <div className="text-on-surface-variant text-xs flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span className="text-emerald-700 font-medium">Đi học đầy đủ</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleAddAbsenceQuick(row.studentId)}
+                                className="px-3 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs border border-primary/20 transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Thêm ngày nghỉ</span>
+                              </button>
                             </div>
                           ) : (
                             <div className="space-y-2">

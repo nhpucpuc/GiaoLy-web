@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Award, X, BookOpen, GraduationCap } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Student } from '../../types';
-import { GenderAvatar } from './GenderAvatar';
 import { RankBadge } from './RankBadge';
 
 interface StudentTranscriptModalProps {
@@ -19,6 +18,9 @@ export const StudentTranscriptModal: React.FC<StudentTranscriptModalProps> = ({
   const { getStudentTranscript, classes, grades } = useApp();
   const [transcriptData, setTranscriptData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const currentClass = classes.find((c) => c.id === student?.classId);
+  const currentGrade = grades.find((g) => g.studentId === student?.id);
 
   useEffect(() => {
     if (isOpen && student) {
@@ -43,9 +45,6 @@ export const StudentTranscriptModal: React.FC<StudentTranscriptModalProps> = ({
   }, [isOpen, student]);
 
   if (!isOpen || !student) return null;
-
-  const currentClass = classes.find((c) => c.id === student.classId);
-  const currentGrade = grades.find((g) => g.studentId === student.id);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto font-body animate-fadeIn">
@@ -75,10 +74,6 @@ export const StudentTranscriptModal: React.FC<StudentTranscriptModalProps> = ({
         <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Student Info Card */}
           <div className="p-4 bg-surface-container-low rounded-2xl border border-outline-variant/30 flex flex-col sm:flex-row items-center sm:items-start gap-4">
-            <GenderAvatar
-              gender={student.gender}
-              className="w-20 h-20 rounded-2xl ring-4 ring-primary/20 shadow-md shrink-0"
-            />
             <div className="space-y-1 text-center sm:text-left flex-1">
               <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
                 <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold text-xs border border-primary/20">

@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useApp } from '../../context/AppContext';
-import { GenderAvatar } from '../shared/GenderAvatar';
 
 export const CatechistListView: React.FC = () => {
   const navigate = useNavigate();
@@ -449,13 +448,7 @@ export const CatechistListView: React.FC = () => {
 
                       {/* Họ và tên */}
                       <td className="py-3.5 px-4 font-bold text-on-surface text-xs">
-                        <div className="flex items-center gap-2">
-                          <GenderAvatar
-                            gender={(glv.holyName && /maria|têrêsa|anna|macta|lucia|cecilia/i.test(glv.holyName)) ? 'Nữ' : 'Nam'}
-                            className="w-7 h-7 rounded-full shrink-0"
-                          />
-                          <span>{glv.fullName}</span>
-                        </div>
+                        <span>{glv.fullName}</span>
                       </td>
 
                       {/* Số điện thoại */}

@@ -7,10 +7,10 @@ import {
   LogOut,
   Lock,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  User
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { GenderAvatar } from '../shared/GenderAvatar';
 
 export const Toolbar: React.FC = () => {
   const location = useLocation();
@@ -195,15 +195,9 @@ export const Toolbar: React.FC = () => {
         {/* User Profile & Logout */}
         <div className="flex items-center pl-2 border-l border-outline-variant/30 space-x-3">
           <div className="flex items-center space-x-2">
-            <GenderAvatar
-              gender={
-                (currentUser?.holyName && /maria|têrêsa|anna|macta|lucia|cecilia|rosa|francesca/i.test(currentUser.holyName)) ||
-                (currentUser?.name && /nga|diễm|mai|hương|hoa|lan|trang|nhiên|thục|hảo|khánh|thạnh|uyên|nguyệt|nhung|thủy|trâm|hà|hằng/i.test(currentUser.name))
-                  ? 'Nữ'
-                  : 'Nam'
-              }
-              className="w-8 h-8 rounded-full ring-2 ring-primary/20"
-            />
+            <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+              <User className="w-4 h-4" />
+            </div>
             <div className="hidden xl:block text-left">
               <div className="text-xs font-bold text-on-surface line-clamp-1">
                 {currentUser?.holyName ? `${currentUser.holyName} ` : ''}{currentUser?.name || 'Tài khoản'}
