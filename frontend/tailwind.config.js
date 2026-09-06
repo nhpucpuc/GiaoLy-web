@@ -42,8 +42,8 @@ export default {
           secondary: "#ffffff"
         },
         outline: {
-          DEFAULT: "#6f797c",
-          variant: "#bec8cb"
+          DEFAULT: "#475569",
+          variant: "#94a3b8"
         },
         customError: {
           DEFAULT: "#ba1a1a",

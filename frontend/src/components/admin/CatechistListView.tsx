@@ -464,8 +464,8 @@ export const CatechistListView: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-surface-container-low/80 border-b border-outline-variant/30 text-on-surface-variant font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-4 text-center w-12">STT</th>
+              <tr className="bg-surface-container-low border-b-2 border-outline-variant/50 text-on-surface font-bold uppercase tracking-wider text-[11px]">
+                <th className="py-3.5 px-4 text-center w-12 border-r border-outline-variant/40">STT</th>
                 <th className="py-3.5 px-4">Tên Thánh</th>
                 <th className="py-3.5 px-4">Họ và Tên GLV</th>
                 <th className="py-3.5 px-4">Số Điện Thoại</th>
@@ -480,7 +480,7 @@ export const CatechistListView: React.FC = () => {
                 <th className="py-3.5 px-4 text-center w-16">Xóa</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant/20 font-body">
+            <tbody className="divide-y divide-outline-variant/40 font-body">
               {filteredCatechists.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-on-surface-variant text-xs">

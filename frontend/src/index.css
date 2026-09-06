@@ -7,6 +7,21 @@
     @apply bg-surface text-on-surface;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+
+  /* Tăng độ đậm và rõ nét cho các đường phân cách bảng biểu và thẻ khối */
+  table {
+    @apply border-collapse;
+  }
+}
+
+/* Tăng độ tương phản phân cách dòng và cột trong bảng cho người lớn tuổi dễ đọc */
+tbody.divide-y > tr + tr {
+  border-top-width: 1px;
+  border-top-color: rgba(148, 163, 184, 0.4) !important;
+}
+
+table th, table td {
+  border-color: rgba(148, 163, 184, 0.35);
 }
 
 /* Custom scrollbar */
@@ -20,10 +35,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #bec8cb;
+  background: #94a3b8;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6f797c;
+  background: #64748b;
 }

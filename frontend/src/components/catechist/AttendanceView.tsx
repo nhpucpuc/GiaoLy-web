@@ -654,9 +654,9 @@ export const AttendanceView: React.FC = () => {
           {/* Bảng điểm danh tối ưu vừa khít cho Mobile */}
           <div className="w-full">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="bg-surface-container-low border-b border-outline-variant/30 text-on-surface font-semibold">
+              <thead className="bg-surface-container-low border-b-2 border-outline-variant/50 text-on-surface font-semibold">
                 <tr>
-                  <th className="py-2.5 px-2 text-center w-10 sm:w-12 border-r border-outline-variant/20 text-[11px] sm:text-xs">
+                  <th className="py-2.5 px-2 text-center w-10 sm:w-12 border-r border-outline-variant/40 text-[11px] sm:text-xs">
                     STT
                   </th>
                   <th className="py-2.5 px-2.5 sm:px-3 text-[11px] sm:text-xs">
@@ -669,7 +669,7 @@ export const AttendanceView: React.FC = () => {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-outline-variant/20 bg-surface-container-lowest">
+              <tbody className="divide-y divide-outline-variant/40 bg-surface-container-lowest">
                 {isLoading ? (
                   <tr>
                     <td colSpan={3} className="p-8 text-center text-on-surface-variant">
@@ -692,7 +692,7 @@ export const AttendanceView: React.FC = () => {
                     return (
                       <tr
                         key={row.studentId}
-                        className={`hover:bg-surface-container-low/40 transition-colors ${
+                        className={`hover:bg-surface-container-low/60 transition-colors ${
                           status === 'V'
                             ? 'bg-rose-50/25'
                             : status === 'VP'
@@ -703,7 +703,7 @@ export const AttendanceView: React.FC = () => {
                         }`}
                       >
                         {/* 1. STT */}
-                        <td className="py-2.5 px-2 text-center font-medium text-outline border-r border-outline-variant/20 text-[11px] sm:text-xs">
+                        <td className="py-2.5 px-2 text-center font-bold text-outline border-r border-outline-variant/40 text-[11px] sm:text-xs">
                           {idx + 1}
                         </td>
 
@@ -730,7 +730,7 @@ export const AttendanceView: React.FC = () => {
                                   ? 'bg-rose-50 text-rose-600 border border-rose-400 hover:bg-rose-100 text-xs sm:text-sm'
                                   : status === 'VP'
                                   ? 'bg-emerald-50 text-emerald-600 border border-emerald-400 hover:bg-emerald-100 text-xs sm:text-sm'
-                                  : 'bg-white hover:bg-surface-container-low text-transparent border border-outline-variant/40 hover:border-primary/40'
+                                  : 'bg-white hover:bg-surface-container-low text-transparent border border-outline-variant/50 hover:border-primary/50'
                               }`}
                             >
                               {status === 'V' ? (
@@ -755,15 +755,15 @@ export const AttendanceView: React.FC = () => {
       {/* 2. GIAO DIỆN "ĐIỂM DANH SAU": THỦ CÔNG ĐẦY ĐỦ TỪNG NGÀY & GHI CHÚ NHƯ CŨ */}
       {/* ========================================================================= */}
       {viewMode === 'MANUAL' && (
-        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-xs overflow-hidden">
+        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 shadow-xs overflow-hidden">
           <div className="overflow-x-auto relative max-h-[72vh]">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="sticky top-0 z-30 bg-surface-container-low border-b border-outline-variant/30 text-on-surface font-semibold">
+              <thead className="sticky top-0 z-30 bg-surface-container-low border-b-2 border-outline-variant/50 text-on-surface font-semibold">
                 <tr>
-                  <th className="p-3 text-center w-12 sticky left-0 bg-surface-container-low z-40 border-r border-outline-variant/20">
+                  <th className="p-3 text-center w-12 sticky left-0 bg-surface-container-low z-40 border-r border-outline-variant/40">
                     STT
                   </th>
-                  <th className="p-3 min-w-[220px] sticky left-12 bg-surface-container-low z-40 border-r border-outline-variant/20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                  <th className="p-3 min-w-[220px] sticky left-12 bg-surface-container-low z-40 border-r border-outline-variant/40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     TÊN THÁNH &amp; HỌ VÀ TÊN
                   </th>
                   <th className="p-3 text-center w-24">
@@ -781,7 +781,7 @@ export const AttendanceView: React.FC = () => {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-outline-variant/20 bg-surface-container-lowest">
+              <tbody className="divide-y divide-outline-variant/40 bg-surface-container-lowest">
                 {isLoading ? (
                   <tr>
                     <td colSpan={6} className="p-10 text-center text-on-surface-variant">
@@ -804,17 +804,17 @@ export const AttendanceView: React.FC = () => {
                     return (
                       <tr
                         key={row.studentId}
-                        className={`hover:bg-surface-container-low/40 transition-colors ${
+                        className={`hover:bg-surface-container-low/60 transition-colors ${
                           row.isDirty ? 'bg-amber-50/30' : ''
                         }`}
                       >
                         {/* Column 1: STT */}
-                        <td className="p-3 text-center font-medium text-outline sticky left-0 bg-surface-container-lowest group-hover:bg-surface-container-low/40 z-20 border-r border-outline-variant/20">
+                        <td className="p-3 text-center font-bold text-outline sticky left-0 bg-surface-container-lowest group-hover:bg-surface-container-low/60 z-20 border-r border-outline-variant/40">
                           {idx + 1}
                         </td>
 
                         {/* Column 2: Tên Thánh & Họ Và Tên */}
-                        <td className="p-3 sticky left-12 bg-surface-container-lowest group-hover:bg-surface-container-low/40 z-20 border-r border-outline-variant/20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                        <td className="p-3 sticky left-12 bg-surface-container-lowest group-hover:bg-surface-container-low/60 z-20 border-r border-outline-variant/40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                           <div>
                             <div className="font-semibold text-on-surface text-xs leading-snug">
                               <span className="text-primary font-bold">{row.holyName}</span> {row.fullName}
