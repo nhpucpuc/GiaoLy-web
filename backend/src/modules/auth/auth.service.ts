@@ -230,7 +230,7 @@ export class AuthService {
     });
 
     if (existing) {
-      throw new ConflictException(`Email ${email} đã tồn tại trong hệ thống`);
+      throw new ConflictException(`Email/Tài khoản "${email}" đã tồn tại trong hệ thống`);
     }
 
     const plainPassword = dto.password?.trim() || 'glv123';
@@ -244,7 +244,7 @@ export class AuthService {
         rawPassword: plainPassword,
         fullName: dto.fullName,
         holyName: dto.holyName || 'Giáo Lý Viên',
-        phone: dto.phone || '0900 000 000',
+        phone: dto.phone?.trim() || '',
         role: 'CATECHIST',
         assignedClassId: dto.assignedClassId || null,
       },
@@ -259,6 +259,81 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async updateCatechist(
+    id: string,
+    dto: {
+      holyName?: string;
+      fullName?: string;
+      phone?: string;
+      email?: string;
+      password?: string;
+      assignedClassId?: string | null;
+    },
+  ) {
+    const catechist = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!catechist) {
+      throw new UnauthorizedException('Không tìm thấy Giáo Lý Viên');
+    }
+
+    const oldClassId = catechist.assignedClassId;
+    const updateData: any = {};
+
+    if (dto.holyName !== undefined) updateData.holyName = dto.holyName.trim() || 'Giáo Lý Viên';
+    if (dto.fullName !== undefined) updateData.fullName = dto.fullName.trim();
+    if (dto.phone !== undefined) updateData.phone = dto.phone.trim();
+
+    if (dto.email !== undefined && dto.email.trim()) {
+      const newEmail = dto.email.trim().toLowerCase();
+      if (newEmail !== catechist.email) {
+        const existing = await this.prisma.user.findUnique({
+          where: { email: newEmail },
+        });
+        if (existing && existing.id !== id) {
+          throw new ConflictException(`Email/Tài khoản "${newEmail}" đã được sử dụng bởi tài khoản khác`);
+        }
+        updateData.email = newEmail;
+      }
+    }
+
+    if (dto.password && dto.password.trim()) {
+      const plainPassword = dto.password.trim();
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(plainPassword, salt);
+      updateData.rawPassword = plainPassword;
+    }
+
+    if (dto.assignedClassId !== undefined) {
+      updateData.assignedClassId = dto.assignedClassId === 'NONE' || !dto.assignedClassId ? null : dto.assignedClassId;
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: updateData,
+      include: {
+        assignedClass: true,
+      },
+    });
+
+    // Đồng bộ lại tên GLV trong các lớp bị ảnh hưởng
+    if (dto.assignedClassId !== undefined && dto.assignedClassId !== oldClassId) {
+      if (updateData.assignedClassId) {
+        await this.syncClassCatechistNames(updateData.assignedClassId);
+      }
+      if (oldClassId) {
+        await this.syncClassCatechistNames(oldClassId);
+      }
+    } else if (dto.fullName !== undefined || dto.holyName !== undefined) {
+      if (updatedUser.assignedClassId) {
+        await this.syncClassCatechistNames(updatedUser.assignedClassId);
+      }
+    }
+
+    return updatedUser;
   }
 
   async deleteCatechist(id: string) {

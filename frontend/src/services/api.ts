@@ -199,6 +199,13 @@ class ApiClient {
     });
   }
 
+  async updateCatechist(id: string, data: any) {
+    return this.request<any>(`/auth/catechists/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   async assignCatechistClass(catechistId: string, classId: string | null) {
     return this.request<any>(`/auth/catechists/${catechistId}/assign-class`, {
       method: 'PUT',

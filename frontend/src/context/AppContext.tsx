@@ -45,6 +45,7 @@ interface AppContextType {
   saveAllGrades: (classId: string, gradesData: any[]) => Promise<any>;
   assignCatechistClass: (catechistId: string, classId: string | null) => Promise<any>;
   createCatechist: (data: any) => Promise<any>;
+  updateCatechist: (id: string, data: any) => Promise<any>;
   deleteCatechist: (id: string) => Promise<any>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<any>;
   createAnnouncement: (data: any) => Promise<any>;
@@ -454,6 +455,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return result;
   };
 
+  const updateCatechist = async (id: string, data: any) => {
+    const result = await api.updateCatechist(id, data);
+    await refreshData();
+    return result;
+  };
+
   const deleteCatechist = async (id: string) => {
     const result = await api.deleteCatechist(id);
     await refreshData();
@@ -502,6 +509,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         saveAllGrades,
         assignCatechistClass,
         createCatechist,
+        updateCatechist,
         deleteCatechist,
         changePassword,
         createAnnouncement,

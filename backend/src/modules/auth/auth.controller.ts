@@ -75,6 +75,16 @@ export class AuthController {
     return this.authService.assignClassToCatechist(id, classId);
   }
 
+  @Put('catechists/:id')
+  @ApiOperation({ summary: 'Cập nhật thông tin Giáo Lý Viên' })
+  @ApiResponse({ status: 200, description: 'Cập nhật Giáo Lý Viên thành công' })
+  updateCatechist(
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.authService.updateCatechist(id, body);
+  }
+
   @Delete('catechists/:id')
   @ApiOperation({ summary: 'Xóa tài khoản Giáo Lý Viên' })
   @ApiResponse({ status: 200, description: 'Xóa Giáo Lý Viên thành công' })

@@ -17,14 +17,15 @@ import {
   Save,
   Trash2,
   AlertTriangle,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Pencil
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useApp } from '../../context/AppContext';
 
 export const CatechistListView: React.FC = () => {
   const navigate = useNavigate();
-  const { catechists, classes, assignCatechistClass, createCatechist, deleteCatechist, refreshData, setSelectedClassId } = useApp();
+  const { catechists, classes, assignCatechistClass, createCatechist, updateCatechist, deleteCatechist, refreshData, setSelectedClassId } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<'ALL' | 'ASSIGNED' | 'UNASSIGNED'>('ALL');
@@ -40,6 +41,19 @@ export const CatechistListView: React.FC = () => {
     phone: '',
     email: '',
     password: 'glv123',
+    assignedClassId: ''
+  });
+
+  // Modal State Chỉnh Sửa GLV
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+  const [editGlvData, setEditGlvData] = useState({
+    id: '',
+    holyName: 'Giuse',
+    fullName: '',
+    phone: '',
+    email: '',
+    password: '',
     assignedClassId: ''
   });
 
@@ -62,6 +76,20 @@ export const CatechistListView: React.FC = () => {
       fullName: val,
       email: normalized ? `${normalized}.glv@gxsonloc.vn` : ''
     }));
+  };
+
+  // Mở modal chỉnh sửa GLV
+  const handleOpenEditModal = (glv: any) => {
+    setEditGlvData({
+      id: glv.id,
+      holyName: glv.holyName || '',
+      fullName: glv.fullName || '',
+      phone: glv.phone || '',
+      email: glv.email || '',
+      password: '',
+      assignedClassId: glv.assignedClassId || ''
+    });
+    setIsEditModalOpen(true);
   };
 
   // Thống kê nhanh
@@ -92,7 +120,7 @@ export const CatechistListView: React.FC = () => {
     });
   }, [catechists, searchTerm, filterCategory]);
 
-  // Xử lý thay đổi phân công lớp
+  // Xử lý thay đổi phân công lớp trực tiếp từ dropdown
   const handleClassChange = async (catechistId: string, catechistName: string, newClassId: string) => {
     setUpdatingGlvId(catechistId);
     try {
@@ -122,7 +150,7 @@ export const CatechistListView: React.FC = () => {
       await createCatechist({
         holyName: newGlvData.holyName.trim() || 'Giáo Lý Viên',
         fullName: newGlvData.fullName.trim(),
-        phone: newGlvData.phone.trim() || '0900 000 000',
+        phone: newGlvData.phone.trim(),
         email: newGlvData.email.trim(),
         password: newGlvData.password.trim() || 'glv123',
         assignedClassId: newGlvData.assignedClassId || null,
@@ -144,6 +172,40 @@ export const CatechistListView: React.FC = () => {
       alert('Lỗi khi tạo Giáo Lý Viên: ' + (err.message || 'Không thể lưu!'));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Xử lý cập nhật thông tin GLV
+  const handleUpdateCatechistSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editGlvData.fullName.trim()) {
+      alert('Vui lòng nhập Họ và Tên Giáo Lý Viên!');
+      return;
+    }
+
+    setIsEditSubmitting(true);
+    try {
+      const payload: any = {
+        holyName: editGlvData.holyName.trim() || 'Giáo Lý Viên',
+        fullName: editGlvData.fullName.trim(),
+        phone: editGlvData.phone.trim(),
+        email: editGlvData.email.trim(),
+        assignedClassId: editGlvData.assignedClassId || null,
+      };
+
+      if (editGlvData.password && editGlvData.password.trim()) {
+        payload.password = editGlvData.password.trim();
+      }
+
+      await updateCatechist(editGlvData.id, payload);
+
+      setIsEditModalOpen(false);
+      setSuccessMessage(`Đã cập nhật thông tin Giáo Lý Viên ${editGlvData.holyName} ${editGlvData.fullName} thành công!`);
+      setTimeout(() => setSuccessMessage(null), 4000);
+    } catch (err: any) {
+      alert('Lỗi khi cập nhật Giáo Lý Viên: ' + (err.message || 'Không thể lưu!'));
+    } finally {
+      setIsEditSubmitting(false);
     }
   };
 
@@ -446,9 +508,19 @@ export const CatechistListView: React.FC = () => {
                         </span>
                       </td>
 
-                      {/* Họ và tên */}
+                      {/* Họ và tên & Nút Chỉnh sửa */}
                       <td className="py-3.5 px-4 font-bold text-on-surface text-xs">
-                        <span>{glv.fullName}</span>
+                        <div className="flex items-center gap-2 group/edit">
+                          <span>{glv.fullName}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(glv)}
+                            title={`Chỉnh sửa thông tin GLV ${glv.holyName} ${glv.fullName}`}
+                            className="p-1 rounded-lg hover:bg-primary/10 text-primary hover:text-primary-dark transition-all opacity-80 hover:opacity-100 cursor-pointer shadow-2xs border border-transparent hover:border-primary/20"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
 
                       {/* Số điện thoại */}
@@ -668,13 +740,12 @@ export const CatechistListView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-on-surface mb-1">Số Điện Thoại (*)</label>
+                <label className="block font-bold text-on-surface mb-1">Số Điện Thoại (Tùy chọn)</label>
                 <div className="relative">
                   <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-primary" />
                   <input
                     type="tel"
-                    required
-                    placeholder="VD: 0912 345 678"
+                    placeholder="VD: 0912 345 678 (Tùy chọn)"
                     value={newGlvData.phone}
                     onChange={(e) => setNewGlvData({ ...newGlvData, phone: e.target.value })}
                     className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 focus:outline-none focus:border-primary text-xs"
@@ -684,12 +755,12 @@ export const CatechistListView: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-on-surface mb-1">Email Đăng Nhập</label>
+                  <label className="block font-bold text-on-surface mb-1">Email / Tài Khoản Đăng Nhập</label>
                   <div className="relative">
                     <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-primary" />
                     <input
-                      type="email"
-                      placeholder="Tự sinh hoặc nhập email"
+                      type="text"
+                      placeholder="Tự sinh hoặc nhập tài khoản/email"
                       value={newGlvData.email}
                       onChange={(e) => setNewGlvData({ ...newGlvData, email: e.target.value })}
                       className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 focus:outline-none focus:border-primary text-xs font-mono"
@@ -747,6 +818,143 @@ export const CatechistListView: React.FC = () => {
                 >
                   <Save className="w-4 h-4" />
                   <span>{isSubmitting ? 'Đang tạo...' : 'Lưu & Khởi Tạo Tài Khoản'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* ========================================================================= */}
+      {/* MODAL CHỈNH SỬA GIÁO LÝ VIÊN */}
+      {/* ========================================================================= */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-surface rounded-2xl border border-outline-variant/30 shadow-2xl w-full max-w-lg overflow-hidden relative">
+            {/* Modal Header */}
+            <div className="bg-primary text-white p-5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-white/15 rounded-xl backdrop-blur-sm">
+                  <Pencil className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold font-sans">Chỉnh Sửa Thông Tin Giáo Lý Viên</h3>
+                  <p className="text-[11px] text-primary-light">Cập nhật hồ sơ, tài khoản & phân công giảng huấn</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-1.5 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body / Form */}
+            <form onSubmit={handleUpdateCatechistSubmit} className="p-6 space-y-4 text-xs">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-1">
+                  <label className="block font-bold text-on-surface mb-1">Tên Thánh (*)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="VD: Giuse"
+                    value={editGlvData.holyName}
+                    onChange={(e) => setEditGlvData({ ...editGlvData, holyName: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 focus:outline-none focus:border-primary font-semibold text-xs"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block font-bold text-on-surface mb-1">Họ và Tên (*)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="VD: Nguyễn Văn An"
+                    value={editGlvData.fullName}
+                    onChange={(e) => setEditGlvData({ ...editGlvData, fullName: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 focus:outline-none focus:border-primary font-bold text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-on-surface mb-1">Số Điện Thoại (Tùy chọn)</label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-primary" />
+                  <input
+                    type="tel"
+                    placeholder="VD: 0912 345 678 (Tùy chọn)"
+                    value={editGlvData.phone}
+                    onChange={(e) => setEditGlvData({ ...editGlvData, phone: e.target.value })}
+                    className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 focus:outline-none focus:border-primary text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-on-surface mb-1">Email / Tài Khoản Đăng Nhập</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-primary" />
+                    <input
+                      type="text"
+                      placeholder="Nhập email hoặc tài khoản"
+                      value={editGlvData.email}
+                      onChange={(e) => setEditGlvData({ ...editGlvData, email: e.target.value })}
+                      className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 focus:outline-none focus:border-primary text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-on-surface mb-1">Đổi Mật Khẩu (Tùy chọn)</label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-primary" />
+                    <input
+                      type="text"
+                      placeholder="Để trống nếu giữ nguyên"
+                      value={editGlvData.password}
+                      onChange={(e) => setEditGlvData({ ...editGlvData, password: e.target.value })}
+                      className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 focus:outline-none focus:border-primary text-xs font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-on-surface mb-1">Phân Công Lớp Giảng Huấn</label>
+                <div className="relative">
+                  <School className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+                  <select
+                    value={editGlvData.assignedClassId || ''}
+                    onChange={(e) => setEditGlvData({ ...editGlvData, assignedClassId: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 focus:outline-none focus:border-primary text-xs font-semibold cursor-pointer"
+                  >
+                    <option value="">-- Chưa phân công lớp (Dự bị) --</option>
+                    {classes.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name} — {cls.session === 'Tối' ? 'Ca Tối' : 'Ca Sáng'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="flex justify-end items-center gap-3 pt-4 border-t border-outline-variant/20">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-bold text-xs cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isEditSubmitting}
+                  className="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isEditSubmitting ? 'Đang lưu...' : 'Lưu Thay Đổi'}</span>
                 </button>
               </div>
             </form>
