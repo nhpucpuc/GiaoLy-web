@@ -737,14 +737,18 @@ export const CatechistClassOverview: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-on-surface mb-1">Tên Giáo Khu / Giáo Họ</label>
-                    <input
-                      type="text"
+                    <label className="block font-bold text-on-surface mb-1">Chọn Giáo Khu</label>
+                    <select
                       value={formData.parishSubdivision || ''}
                       onChange={(e) => setFormData({ ...formData, parishSubdivision: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-surface-container-low border border-outline-variant/50 rounded-xl font-bold text-secondary outline-none focus:border-secondary"
-                      placeholder="VD: Mẹ Thiên Chúa, Đức Mẹ Lên Trời..."
-                    />
+                      className="w-full px-3.5 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl font-bold text-secondary outline-none focus:border-secondary cursor-pointer text-xs"
+                    >
+                      <option value="">-- Chưa chọn Giáo khu --</option>
+                      <option value="Mẹ Lên Trời">Giáo khu Mẹ Lên Trời</option>
+                      <option value="Mẹ Thiên Chúa">Giáo khu Mẹ Thiên Chúa</option>
+                      <option value="Mẹ Mân Côi">Giáo khu Mẹ Mân Côi</option>
+                      <option value="Mẹ Fatima">Giáo khu Mẹ Fatima</option>
+                    </select>
                   </div>
                 </div>
               )}

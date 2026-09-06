@@ -380,22 +380,20 @@ export const AddStudentView: React.FC = () => {
                   />
                 </div>
 
-                {/* Giáo khu */}
-                <div>
-                  <label className="block font-semibold text-on-surface mb-1">Giáo khu</label>
-                  <select
-                    value={formData.parishSubdivision}
-                    onChange={(e) => setFormData({ ...formData, parishSubdivision: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-white border border-outline-variant/40 focus:outline-none focus:border-primary transition-all text-xs cursor-pointer"
-                  >
-                    <option value="Mẹ Lên Trời">Giáo khu Mẹ Lên Trời</option>
-                    <option value="Mẹ Thiên Chúa">Giáo khu Mẹ Thiên Chúa</option>
-                    <option value="Mân Côi">Giáo khu Mân Côi</option>
-                    <option value="Vô Nhiễm">Giáo khu Vô Nhiễm</option>
-                    <option value="Thánh Gia">Giáo khu Thánh Gia</option>
-                    <option value="Giáo xứ khác">Giáo xứ khác / Tân tòng</option>
-                  </select>
-                </div>
+                  {/* Giáo khu */}
+                  <div>
+                    <label className="block font-semibold text-on-surface mb-1">Giáo khu</label>
+                    <select
+                      value={formData.parishSubdivision}
+                      onChange={(e) => setFormData({ ...formData, parishSubdivision: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-outline-variant/40 focus:outline-none focus:border-primary transition-all text-xs cursor-pointer"
+                    >
+                      <option value="Mẹ Lên Trời">Giáo khu Mẹ Lên Trời</option>
+                      <option value="Mẹ Thiên Chúa">Giáo khu Mẹ Thiên Chúa</option>
+                      <option value="Mẹ Mân Côi">Giáo khu Mẹ Mân Côi</option>
+                      <option value="Mẹ Fatima">Giáo khu Mẹ Fatima</option>
+                    </select>
+                  </div>
 
                 {/* Chỗ ở hiện tại */}
                 <div className="sm:col-span-2 lg:col-span-3">

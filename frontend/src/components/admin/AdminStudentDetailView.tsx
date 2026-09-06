@@ -457,7 +457,7 @@ export const AdminStudentDetailView: React.FC = () => {
                   >
                     <div>
                       <div className="font-bold text-on-surface">{att.type}</div>
-                      <div className="text-[11px] text-outline">{att.date}</div>
+                      <div className="text-[11px] text-outline">{formatToDDMMYYYY(att.date)}</div>
                     </div>
                     <div>
                       <span

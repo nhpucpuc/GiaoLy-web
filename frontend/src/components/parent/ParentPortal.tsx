@@ -12,6 +12,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { StudentTranscriptModal } from '../shared/StudentTranscriptModal';
 import { getFullCatechistNames } from '../../utils/catechistHelper';
+import { formatToDDMMYYYY } from '../../utils/dateUtils';
 import { api } from '../../services/api';
 import { GradeRecord } from '../../types';
 
@@ -412,7 +413,7 @@ export const ParentPortal: React.FC = () => {
                   return (
                     <div key={att.id} className="p-3 rounded-xl bg-surface-container-low flex items-center justify-between text-xs">
                       <div>
-                        <div className="font-bold text-on-surface">Buổi học ngày {att.date}</div>
+                        <div className="font-bold text-on-surface">Buổi học ngày {formatToDDMMYYYY(att.date)}</div>
                         {att.notes && <div className="text-[11px] text-on-surface-variant italic mt-0.5">• {att.notes}</div>}
                       </div>
                       <div>

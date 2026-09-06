@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
+import { formatToDDMMYYYY } from '../../utils/dateUtils';
+import { CustomDatePicker } from '../common/CustomDatePicker';
 
 export interface AbsenceItem {
   id?: string;
@@ -37,23 +39,14 @@ export interface StudentAttendanceRow {
   isDirty?: boolean;
 }
 
-// Lấy ngày hôm nay theo giờ địa phương YYYY-MM-DD
+// Lấy ngày hôm nay theo định dạng cố định DD/MM/YYYY
 const getLocalDateString = (): string => {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return formatToDDMMYYYY(new Date());
 };
 
-// Format ngày hiển thị tiếng Việt DD/MM/YYYY
+// Format ngày hiển thị tiếng Việt DD/MM/YYYY không phụ thuộc locale của máy
 const formatDisplayDate = (dateStr: string): string => {
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length === 3) {
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  }
-  return dateStr;
+  return formatToDDMMYYYY(dateStr);
 };
 
 export const AttendanceView: React.FC = () => {
@@ -106,7 +99,7 @@ export const AttendanceView: React.FC = () => {
 
         const absences: AbsenceItem[] = studentRecords.map((r: any) => ({
           id: r.id,
-          date: r.date || todayDateStr,
+          date: formatToDDMMYYYY(r.date) || todayDateStr,
           status: r.status === 'VANG_KHONG_PHEP' ? 'VANG_KHONG_PHEP' : 'VANG_CO_PHEP',
           notes: r.notes || '',
         }));
@@ -886,14 +879,12 @@ export const AttendanceView: React.FC = () => {
                                     #{absIdx + 1}
                                   </span>
 
-                                  {/* Ngày vắng */}
-                                  <input
-                                    type="date"
+                                  {/* Ngày vắng (Định dạng DD/MM/YYYY không phụ thuộc cài đặt máy) */}
+                                  <CustomDatePicker
                                     value={abs.date}
-                                    onChange={(e) =>
-                                      handleAbsenceDetailChange(row.studentId, absIdx, 'date', e.target.value)
+                                    onChange={(val) =>
+                                      handleAbsenceDetailChange(row.studentId, absIdx, 'date', val)
                                     }
-                                    className="bg-surface-container-lowest px-2 py-1 rounded-md border border-outline-variant/30 text-xs text-on-surface outline-none focus:border-primary/60"
                                   />
 
                                   {/* Phân loại phép / không phép */}
