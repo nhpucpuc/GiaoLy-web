@@ -143,6 +143,26 @@ class ApiClient {
     });
   }
 
+  async getDeletedStudents(classId?: string, search?: string) {
+    const params = new URLSearchParams();
+    if (classId) params.append('classId', classId);
+    if (search) params.append('search', search);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.request<any[]>(`/students/deleted${qs}`);
+  }
+
+  async restoreStudent(id: string) {
+    return this.request<any>(`/students/${id}/restore`, {
+      method: 'PUT',
+    });
+  }
+
+  async permanentDeleteStudent(id: string) {
+    return this.request<any>(`/students/${id}/permanent`, {
+      method: 'DELETE',
+    });
+  }
+
   // --- 4. Grades APIs ---
   async getGradesByClass(classId: string) {
     return this.request<any[]>(`/grades/class/${classId}`);

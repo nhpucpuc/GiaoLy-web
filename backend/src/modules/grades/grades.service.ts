@@ -47,6 +47,9 @@ export class GradesService {
       where: {
         classId,
         academicYear,
+        student: {
+          isDeleted: false,
+        },
       },
       include: {
         student: {

@@ -9,6 +9,7 @@ import { AddClassView } from './components/admin/AddClassView';
 import { AcademicYearManager } from './components/admin/AcademicYearManager';
 import { AdminStudentDetailView } from './components/admin/AdminStudentDetailView';
 import { CatechistListView } from './components/admin/CatechistListView';
+import { DeletedStudentsView } from './components/admin/DeletedStudentsView';
 import { CatechistClassOverview } from './components/catechist/CatechistClassOverview';
 import { GradeEntryView } from './components/catechist/GradeEntryView';
 import { AttendanceView } from './components/catechist/AttendanceView';
@@ -85,6 +86,7 @@ export default function App() {
           <Route path="add-class" element={<AddClassView />} />
           <Route path="diem-danh" element={<AttendanceView />} />
           <Route path="nien-khoa" element={<AcademicYearManager />} />
+          <Route path="thung-rac" element={<DeletedStudentsView />} />
         </Route>
 
         {/* Route 3: Cổng Giáo Lý Viên (GLV Routes) */}

@@ -115,6 +115,9 @@ model Student {
   avatar              String?
   notes               String?
   
+  isDeleted           Boolean        @default(false)
+  deletedAt           DateTime?
+  
   // Quan hệ
   grades              GradeRecord[]
   attendance          Attendance[]

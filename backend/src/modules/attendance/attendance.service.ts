@@ -27,7 +27,7 @@ export class AttendanceService {
   async getByClass(classId: string) {
     return this.prisma.attendance.findMany({
       where: {
-        student: { classId },
+        student: { classId, isDeleted: false },
       },
       include: {
         student: {

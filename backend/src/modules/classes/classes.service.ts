@@ -62,7 +62,11 @@ export class ClassesService {
       where,
       include: {
         _count: {
-          select: { students: true },
+          select: {
+            students: {
+              where: { isDeleted: false },
+            },
+          },
         },
         leaderUser: {
           where: { role: 'CATECHIST' },
@@ -158,6 +162,7 @@ export class ClassesService {
       where: { academicYear: fromYear },
       include: {
         students: {
+          where: { isDeleted: false },
           include: {
             grades: {
               where: { academicYear: fromYear },
@@ -304,6 +309,7 @@ export class ClassesService {
           orderBy: { createdAt: 'asc' },
         },
         students: {
+          where: { isDeleted: false },
           orderBy: { fullName: 'asc' },
           include: {
             grades: {

@@ -40,6 +40,8 @@ interface AppContextType {
   addStudent: (newStudent: Omit<Student, 'id'>) => Promise<any>;
   updateStudent: (student: Student) => Promise<any>;
   deleteStudent: (id: string) => Promise<any>;
+  restoreStudent: (id: string) => Promise<any>;
+  permanentDeleteStudent: (id: string) => Promise<any>;
   updateStudentNote: (studentId: string, notes: string) => Promise<any>;
   updateGrade: (grade: GradeRecord) => Promise<any>;
   saveAllGrades: (classId: string, gradesData: any[]) => Promise<any>;
@@ -407,6 +409,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return result;
   };
 
+  const restoreStudent = async (id: string) => {
+    const result = await api.restoreStudent(id);
+    await refreshData();
+    return result;
+  };
+
+  const permanentDeleteStudent = async (id: string) => {
+    const result = await api.permanentDeleteStudent(id);
+    await refreshData();
+    return result;
+  };
+
   const updateStudentNote = async (studentId: string, notes: string) => {
     const result = await api.updateStudent(studentId, { notes });
     await refreshData();
@@ -504,6 +518,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addStudent,
         updateStudent,
         deleteStudent,
+        restoreStudent,
+        permanentDeleteStudent,
         updateStudentNote,
         updateGrade,
         saveAllGrades,

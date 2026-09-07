@@ -158,11 +158,11 @@ export const AdminStudentDetailView: React.FC = () => {
     showToast(`Đã cập nhật hồ sơ em ${updated.holyName} ${updated.fullName} thành công!`);
   };
 
-  // Xóa học sinh
+  // Xóa học sinh (Chuyển vào thùng rác)
   const handleDeleteStudent = async () => {
     if (!currentStudent) return;
     const isConfirmed = window.confirm(
-      `Bạn có chắc chắn muốn xóa học sinh "${currentStudent.holyName} ${currentStudent.fullName}" không? Dữ liệu điểm và chuyên cần liên quan cũng sẽ bị xóa vĩnh viễn.`
+      `Bạn có chắc chắn muốn chuyển học sinh "${currentStudent.holyName} ${currentStudent.fullName}" vào thùng rác không? Toàn bộ điểm số & điểm danh vẫn được bảo lưu an toàn và có thể khôi phục lại bất kỳ lúc nào.`
     );
     if (!isConfirmed) return;
 

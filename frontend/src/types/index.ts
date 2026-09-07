@@ -60,6 +60,16 @@ export interface Student {
   status: 'Đang học' | 'Nghỉ học' | 'Chuyển xứ' | string;
   avatar?: string;
   notes?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
+  class?: {
+    id: string;
+    name: string;
+    category?: string;
+    academicYear?: string;
+  };
+  grades?: any[];
+  attendance?: any[];
 }
 
 export type ConductType = 'Xuất sắc' | 'Giỏi' | 'Khá' | 'Trung bình' | 'Cần cố gắng';

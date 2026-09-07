@@ -15,7 +15,9 @@ export class StudentsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(classId?: string, search?: string) {
-    const where: any = {};
+    const where: any = {
+      isDeleted: false,
+    };
     if (classId) {
       where.classId = classId;
     }
@@ -23,6 +25,7 @@ export class StudentsService {
       where.OR = [
         { fullName: { contains: search, mode: 'insensitive' } },
         { holyName: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
         { parentPhone: { contains: search } },
       ];
     }
@@ -31,11 +34,42 @@ export class StudentsService {
       where,
       include: {
         class: {
-          select: { id: true, name: true, category: true },
+          select: { id: true, name: true, category: true, academicYear: true },
         },
         grades: true,
       },
       orderBy: { fullName: 'asc' },
+    });
+  }
+
+  async findDeleted(classId?: string, search?: string) {
+    const where: any = {
+      isDeleted: true,
+    };
+    if (classId) {
+      where.classId = classId;
+    }
+    if (search) {
+      where.OR = [
+        { fullName: { contains: search, mode: 'insensitive' } },
+        { holyName: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+        { parentPhone: { contains: search } },
+      ];
+    }
+
+    return this.prisma.student.findMany({
+      where,
+      include: {
+        class: {
+          select: { id: true, name: true, category: true, academicYear: true },
+        },
+        grades: true,
+        attendance: {
+          orderBy: { date: 'desc' },
+        },
+      },
+      orderBy: { deletedAt: 'desc' },
     });
   }
 
@@ -104,6 +138,8 @@ export class StudentsService {
       status: mapStudentStatus(createStudentDto.status),
       avatar: createStudentDto.avatar || null,
       notes: createStudentDto.notes || null,
+      isDeleted: false,
+      deletedAt: null,
     };
 
     const student = await this.prisma.student.create({
@@ -163,8 +199,43 @@ export class StudentsService {
     });
   }
 
+  // Soft delete: Đánh dấu đã xóa, giữ nguyên toàn bộ điểm số & điểm danh
   async remove(id: string) {
     await this.findOne(id);
+    return this.prisma.student.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    });
+  }
+
+  // Restore: Khôi phục lại trạng thái bình thường
+  async restore(id: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { id },
+    });
+    if (!student) {
+      throw new NotFoundException(`Không tìm thấy học sinh có ID ${id}`);
+    }
+    return this.prisma.student.update({
+      where: { id },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+      },
+    });
+  }
+
+  // Permanent Delete: Xóa vĩnh viễn khỏi CSDL (Bao gồm xóa bảng điểm và điểm danh)
+  async permanentDelete(id: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { id },
+    });
+    if (!student) {
+      throw new NotFoundException(`Không tìm thấy học sinh có ID ${id}`);
+    }
     await this.prisma.gradeRecord.deleteMany({ where: { studentId: id } });
     await this.prisma.attendance.deleteMany({ where: { studentId: id } });
     return this.prisma.student.delete({

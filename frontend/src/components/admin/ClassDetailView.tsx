@@ -145,18 +145,18 @@ export const ClassDetailView: React.FC = () => {
     showToast(`Đã cập nhật thông tin em ${updated.holyName} ${updated.fullName} thành công!`);
   };
 
-  // Xóa học sinh
+  // Xóa học sinh (Chuyển vào thùng rác)
   const handleDeleteStudent = async () => {
     if (!editingStudent) return;
     const isConfirmed = window.confirm(
-      `Bạn có chắc chắn muốn xóa học sinh "${editingStudent.holyName} ${editingStudent.fullName}" không? Dữ liệu điểm và chuyên cần liên quan cũng sẽ bị xóa vĩnh viễn.`
+      `Bạn có chắc chắn muốn chuyển học sinh "${editingStudent.holyName} ${editingStudent.fullName}" vào thùng rác không? Toàn bộ điểm số & điểm danh vẫn được bảo lưu an toàn và có thể khôi phục lại bất kỳ lúc nào.`
     );
     if (!isConfirmed) return;
 
     try {
       await deleteStudent(editingStudent.id);
       setEditingStudent(null);
-      showToast(`Đã xóa học sinh ${editingStudent.holyName} ${editingStudent.fullName} thành công!`);
+      showToast(`Đã chuyển học sinh ${editingStudent.holyName} ${editingStudent.fullName} vào thùng rác thành công!`);
     } catch (err: any) {
       alert('Lỗi khi xóa học sinh: ' + (err.message || 'Không thể thực hiện!'));
     }

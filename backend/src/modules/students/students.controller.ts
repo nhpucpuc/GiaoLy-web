@@ -19,6 +19,17 @@ export class StudentsController {
     return this.studentsService.findAll(classId, search);
   }
 
+  @Get('deleted')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy danh sách học sinh đã bị xóa mềm (Chỉ Admin)' })
+  @ApiQuery({ name: 'classId', required: false, description: 'Lọc theo ID lớp học' })
+  @ApiQuery({ name: 'search', required: false, description: 'Tìm theo Tên Thánh, Họ Tên hoặc SĐT Phụ Huynh' })
+  findDeleted(@Query('classId') classId?: string, @Query('search') search?: string) {
+    return this.studentsService.findDeleted(classId, search);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Lấy chi tiết hồ sơ học sinh, học bạ, lịch sử chuyên cần & bí tích' })
   findOne(@Param('id') id: string) {
@@ -43,12 +54,30 @@ export class StudentsController {
     return this.studentsService.update(id, updateStudentDto);
   }
 
+  @Put(':id/restore')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Khôi phục học sinh đã xóa (Chỉ Admin)' })
+  restore(@Param('id') id: string) {
+    return this.studentsService.restore(id);
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'CATECHIST')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Xóa học sinh khỏi hệ thống (Admin hoặc GLV)' })
+  @ApiOperation({ summary: 'Xóa học sinh vào thùng rác (Admin hoặc GLV)' })
   remove(@Param('id') id: string) {
     return this.studentsService.remove(id);
+  }
+
+  @Delete(':id/permanent')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Xóa vĩnh viễn học sinh khỏi CSDL (Chỉ Admin)' })
+  permanentDelete(@Param('id') id: string) {
+    return this.studentsService.permanentDelete(id);
   }
 }

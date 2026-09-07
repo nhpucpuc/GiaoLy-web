@@ -11,7 +11,8 @@ import {
   CalendarCheck,
   LogOut,
   Sparkles,
-  KeyRound
+  KeyRound,
+  Trash2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ChangePasswordModal } from '../shared/ChangePasswordModal';
@@ -149,6 +150,19 @@ export const Sidebar: React.FC = () => {
               >
                 <Sparkles className="w-5 h-5 text-amber-500" />
                 <span>Niên khóa & Lên lớp</span>
+              </NavLink>
+
+              <NavLink
+                to="/admin/thung-rac"
+                className={({ isActive }) =>
+                  `w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
+                    ? 'bg-rose-600 text-white shadow-sm shadow-rose-600/30'
+                    : 'text-on-surface-variant hover:bg-surface-container hover:text-rose-600 dark:hover:text-rose-400'
+                  }`
+                }
+              >
+                <Trash2 className="w-5 h-5 text-rose-500" />
+                <span>Thùng rác học sinh</span>
               </NavLink>
             </>
           )}
