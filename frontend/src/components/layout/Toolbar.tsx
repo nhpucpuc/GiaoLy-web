@@ -8,7 +8,9 @@ import {
   Lock,
   PanelLeftClose,
   PanelLeftOpen,
-  User
+  User,
+  Search,
+  X
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -32,6 +34,22 @@ export const Toolbar: React.FC = () => {
   } = useApp();
 
   const [showNotifications, setShowNotifications] = useState(false);
+  const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+
+  // Đồng bộ search input nếu đang ở trang search
+  React.useEffect(() => {
+    if (location.pathname.includes('/admin/tim-kiem') || location.pathname.includes('/admin/search')) {
+      const params = new URLSearchParams(location.search);
+      setGlobalSearchTerm(params.get('q') || '');
+    }
+  }, [location.pathname, location.search]);
+
+  const handleGlobalSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (globalSearchTerm.trim()) {
+      navigate(`/admin/tim-kiem?q=${encodeURIComponent(globalSearchTerm.trim())}`);
+    }
+  };
 
   const getPageTitle = () => {
     const p = location.pathname;
@@ -40,6 +58,7 @@ export const Toolbar: React.FC = () => {
     if (p.includes('/admin/add-student')) return 'Thêm Học Sinh Mới';
     if (p.includes('/admin/add-class')) return 'Thêm Lớp Giáo Lý Mới';
     if (p.includes('/admin/giao-ly-vien') || p.includes('/admin/catechists')) return 'Danh Sách Giáo Lý Viên';
+    if (p.includes('/admin/tim-kiem') || p.includes('/admin/search')) return 'Tìm Kiếm Học Sinh Toàn Xứ';
     if (p.includes('/glyvien/tong-quan')) return 'Tổng Quan Lớp Phụ Trách';
     if (p.includes('/glyvien/nhap-diem')) return 'Bảng Điểm & Đánh Giá Hạnh Kiểm';
     if (p.includes('/diem-danh')) return 'Quản Lý Điểm Danh & Chuyên Cần';
@@ -155,8 +174,43 @@ export const Toolbar: React.FC = () => {
         )}
       </div>
 
+      {/* Center: Thanh Tìm Kiếm Học Sinh Toàn Cục (Dành cho Admin) */}
+      {currentRole === 'admin' && (
+        <form
+          onSubmit={handleGlobalSearchSubmit}
+          className="hidden md:flex items-center flex-1 max-w-xs lg:max-w-md mx-3 lg:mx-6"
+        >
+          <div className="relative w-full">
+            <input
+              type="text"
+              value={globalSearchTerm}
+              onChange={(e) => setGlobalSearchTerm(e.target.value)}
+              placeholder="Tìm kiếm học sinh theo tên (nhấn Enter)..."
+              className="w-full bg-surface-container-low/70 hover:bg-surface-container-low focus:bg-surface-container-lowest text-xs text-on-surface placeholder:text-outline/70 pl-9 pr-9 py-2 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-2xs"
+            />
+            <button
+              type="submit"
+              title="Nhấn để tìm kiếm"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-primary p-0.5 rounded cursor-pointer transition-colors"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+            {globalSearchTerm && (
+              <button
+                type="button"
+                onClick={() => setGlobalSearchTerm('')}
+                title="Xóa từ khóa"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface p-0.5 rounded cursor-pointer transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </form>
+      )}
+
       {/* Right: Notifications + Profile & Logout */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-3 shrink-0">
         {/* Notifications */}
         <div className="relative">
           <button
