@@ -569,8 +569,8 @@ export const AttendanceView: React.FC = () => {
             </h1>
             <p className="text-xs text-on-surface-variant">
               {viewMode === 'TODAY'
-                ? 'Nhấn trực tiếp vào ô để chuyển đổi: Tick 1 lần (V - Vắng không phép), Tick 2 lần (VP - Vắng có phép), Tick 3 lần (Đi học).'
-                : 'Bảng điểm danh tổng quát theo từng ngày. Nhấn trực tiếp vào ô để chuyển đổi: 1 lần (V), 2 lần (VP), 3 lần (Đi học). Bấm "Thêm ngày" nếu muốn điểm danh bổ sung.'}
+                ? 'Nhấn trực tiếp vào ô để chuyển đổi: Tick 1 lần (V - Vắng không phép), Tick 2 lần (VP - Vắng có phép), Tick 3 lần (bỏ chọn).'
+                : 'Bảng điểm danh tổng quát theo từng ngày. Nhấn trực tiếp vào ô để chuyển đổi: 1 lần (V), 2 lần (VP), 3 lần (bỏ chọn). Bấm "Thêm ngày" nếu muốn điểm danh bổ sung.'}
             </p>
           </div>
 
@@ -866,7 +866,7 @@ export const AttendanceView: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[10px] sm:text-[11px] text-outline italic">
-                * Nhấn trực tiếp vào ô: V ➔ VP ➔ Đi học
+                * Nhấn trực tiếp vào ô: V ➔ VP ➔ Bỏ chọn
               </span>
               <button
                 type="button"
