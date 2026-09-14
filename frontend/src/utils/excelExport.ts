@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { Student, ClassRoom } from '../types';
+import { sortStudentsByVietnameseName } from './nameUtils';
 
 export function exportClassRosterToExcel(
   classRoom: ClassRoom | null | undefined,
@@ -14,8 +15,11 @@ export function exportClassRosterToExcel(
   const className = classRoom?.name || 'Lớp Giáo Lý';
   const academicYear = classRoom?.academicYear || '2026 - 2027';
 
+  // Sắp xếp danh sách học sinh theo Alphabet tính bằng Tên chuẩn tiếng Việt
+  const sortedStudents = sortStudentsByVietnameseName(students);
+
   // 1. Tạo dữ liệu các dòng
-  const rows = students.map((s, idx) => ({
+  const rows = sortedStudents.map((s, idx) => ({
     'STT': idx + 1,
     'Mã Học Sinh': s.code || s.id,
     'Tên Thánh': s.holyName || '',

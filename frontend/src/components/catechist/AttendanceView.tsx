@@ -10,15 +10,17 @@ import {
   Filter,
   Users,
   UserCheck,
-  UserX,
-  Trash2,
   Plus,
   Clock,
-  ArrowLeft
+  ArrowLeft,
+  X,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
-import { formatToDDMMYYYY } from '../../utils/dateUtils';
+import { formatToDDMMYYYY, compareDDMMYYYY, isValidDDMMYYYY } from '../../utils/dateUtils';
+import { sortStudentsByVietnameseName } from '../../utils/nameUtils';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 
 export interface AbsenceItem {
@@ -59,8 +61,29 @@ export const AttendanceView: React.FC = () => {
     currentUser
   } = useApp();
 
-  // Chế độ: 'TODAY' (Mặc định: Điểm danh nhanh hôm nay) hoặc 'MANUAL' (Điểm danh sau)
-  const [viewMode, setViewMode] = useState<'TODAY' | 'MANUAL'>('TODAY');
+  // Chế độ: 'TODAY' (Điểm danh nhanh hôm nay) hoặc 'GENERAL' (Điểm danh tổng quát)
+  const [viewMode, setViewMode] = useState<'TODAY' | 'GENERAL'>('TODAY');
+
+  // Danh sách ngày được GLV thêm thủ công qua nút "Thêm ngày"
+  const [manualAddedDates, setManualAddedDates] = useState<string[]>([]);
+  const [isAddDateModalOpen, setIsAddDateModalOpen] = useState(false);
+  const [modalDateInput, setModalDateInput] = useState(getLocalDateString());
+
+  // Quản lý menu tùy chọn cột ngày (Chỉnh sửa / Xóa)
+  const [dateMenuState, setDateMenuState] = useState<{
+    dateStr: string;
+    top: number;
+    left: number;
+  } | null>(null);
+
+  // Modal Chỉnh sửa ngày
+  const [isEditDateModalOpen, setIsEditDateModalOpen] = useState(false);
+  const [targetEditingDate, setTargetEditingDate] = useState<string>('');
+  const [editDateInput, setEditDateInput] = useState<string>('');
+
+  // Modal Xác nhận xóa ngày
+  const [isDeleteDateModalOpen, setIsDeleteDateModalOpen] = useState(false);
+  const [targetDeletingDate, setTargetDeletingDate] = useState<string>('');
 
   // Xác định lớp phụ trách
   const activeClassId = currentRole === 'catechist' && currentUser?.assignedClassId
@@ -199,48 +222,95 @@ export const AttendanceView: React.FC = () => {
   };
 
   // =========================================================================
-  // CÁC HÀM XỬ LÝ CHẾ ĐỘ "ĐIỂM DANH SAU" (THỦ CÔNG)
+  // LOGIC CHẾ ĐỘ "ĐIỂM DANH TỔNG QUÁT" (LƯỚI EXCEL THEO TỪNG NGÀY)
   // =========================================================================
-  const handleAbsenceDetailChange = (
-    studentId: string,
-    index: number,
-    field: keyof AbsenceItem,
-    value: any
-  ) => {
-    setAttendanceData((prev) => {
-      const current = prev[studentId];
-      if (!current) return prev;
 
-      const updatedAbsences = [...current.absences];
-      if (!updatedAbsences[index]) return prev;
+  // Danh sách các cột ngày: Tự sinh từ tất cả ngày vắng của lớp + ngày được thêm thủ công
+  // Tự động sắp xếp theo thứ tự thời gian tăng dần (cũ -> mới)
+  const attendanceDates = useMemo(() => {
+    const dateSet = new Set<string>();
 
-      updatedAbsences[index] = {
-        ...updatedAbsences[index],
-        [field]: value,
-      };
-
-      return {
-        ...prev,
-        [studentId]: {
-          ...current,
-          absences: updatedAbsences,
-          isDirty: true,
-        },
-      };
+    // 1. Tự sinh từ dữ liệu vắng của học sinh trong lớp
+    Object.values(attendanceData).forEach((row) => {
+      row.absences.forEach((a) => {
+        if (a.date && a.date.trim()) {
+          dateSet.add(a.date.trim());
+        }
+      });
     });
+
+    // 2. Thêm các ngày được GLV thêm thủ công qua nút "Thêm ngày"
+    manualAddedDates.forEach((d) => {
+      if (d && d.trim()) {
+        dateSet.add(d.trim());
+      }
+    });
+
+    // 3. Tự động sắp xếp ngày đúng thứ tự thời gian từ cũ đến mới
+    return Array.from(dateSet).sort(compareDDMMYYYY);
+  }, [attendanceData, manualAddedDates]);
+
+  // Lấy trạng thái của học sinh tại 1 ngày cụ thể: 'V' | 'VP' | ''
+  const getCellStatus = (studentId: string, dateStr: string): 'V' | 'VP' | '' => {
+    const row = attendanceData[studentId];
+    if (!row) return '';
+    const abs = row.absences.find((a) => a.date === dateStr);
+    if (!abs) return '';
+    return abs.status === 'VANG_KHONG_PHEP' ? 'V' : 'VP';
   };
 
-  const handleRemoveAbsence = (studentId: string, index: number) => {
+  // Click vào ô trên bảng Excel để cycle trạng thái:
+  // Nhấn 1 lần: V (Vắng không phép)
+  // Nhấn 2 lần: VP (Vắng có phép)
+  // Nhấn 3 lần: Trả về nguyên trạng (Đi học)
+  const handleCycleCellAttendance = (studentId: string, dateStr: string) => {
     setAttendanceData((prev) => {
-      const current = prev[studentId];
-      if (!current) return prev;
+      const row = prev[studentId];
+      if (!row) return prev;
 
-      const updatedAbsences = current.absences.filter((_, i) => i !== index);
+      const currentStatus = getCellStatus(studentId, dateStr);
+      let updatedAbsences = [...row.absences];
+      const index = updatedAbsences.findIndex((a) => a.date === dateStr);
+
+      if (currentStatus === '') {
+        // Trạng thái 1: Vắng không phép ("V")
+        if (index >= 0) {
+          updatedAbsences[index] = {
+            ...updatedAbsences[index],
+            status: 'VANG_KHONG_PHEP',
+          };
+        } else {
+          updatedAbsences.push({
+            date: dateStr,
+            status: 'VANG_KHONG_PHEP',
+            notes: '',
+          });
+        }
+      } else if (currentStatus === 'V') {
+        // Trạng thái 2: Vắng có phép ("VP")
+        if (index >= 0) {
+          updatedAbsences[index] = {
+            ...updatedAbsences[index],
+            status: 'VANG_CO_PHEP',
+          };
+        } else {
+          updatedAbsences.push({
+            date: dateStr,
+            status: 'VANG_CO_PHEP',
+            notes: '',
+          });
+        }
+      } else {
+        // Trạng thái 3: Trả về nguyên trạng (Đi học -> xóa khỏi danh sách vắng)
+        if (index >= 0) {
+          updatedAbsences = updatedAbsences.filter((a) => a.date !== dateStr);
+        }
+      }
 
       return {
         ...prev,
         [studentId]: {
-          ...current,
+          ...row,
           absentCount: updatedAbsences.length,
           absences: updatedAbsences,
           isDirty: true,
@@ -249,30 +319,133 @@ export const AttendanceView: React.FC = () => {
     });
   };
 
-  const handleAddAbsenceQuick = (studentId: string) => {
-    setAttendanceData((prev) => {
-      const current = prev[studentId];
-      if (!current) return prev;
+  // Mở popup Thêm ngày
+  const handleOpenAddDateModal = () => {
+    setModalDateInput(getLocalDateString());
+    setIsAddDateModalOpen(true);
+  };
 
-      const updatedAbsences = [
-        ...current.absences,
-        {
-          date: todayDateStr,
-          status: 'VANG_CO_PHEP' as const,
-          notes: '',
-        },
-      ];
+  // Xác nhận tạo cột ngày mới từ popup
+  const handleConfirmAddDate = () => {
+    if (!modalDateInput || !isValidDDMMYYYY(modalDateInput)) {
+      showToast('Vui lòng chọn ngày hợp lệ (định dạng dd/mm/yyyy)!', 'error');
+      return;
+    }
 
-      return {
-        ...prev,
-        [studentId]: {
-          ...current,
-          absentCount: updatedAbsences.length,
-          absences: updatedAbsences,
-          isDirty: true,
-        },
-      };
+    const formatted = formatToDDMMYYYY(modalDateInput);
+    if (attendanceDates.includes(formatted)) {
+      showToast(`Ngày ${formatted} đã có trong danh sách bảng điểm danh!`, 'error');
+      return;
+    }
+
+    setManualAddedDates((prev) => [...prev, formatted]);
+    setIsAddDateModalOpen(false);
+    showToast(`Đã thêm cột ngày ${formatted} thành công!`);
+  };
+
+  // Mở menu tùy chọn cột ngày (Chỉnh sửa / Xóa)
+  const handleOpenDateActionMenu = (e: React.MouseEvent, dateStr: string) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDateMenuState({
+      dateStr,
+      top: rect.bottom + 6,
+      left: Math.max(10, Math.min(window.innerWidth - 180, rect.left - 50)),
     });
+  };
+
+  // Mở popup chỉnh sửa ngày
+  const handleStartEditDate = (dateStr: string) => {
+    setDateMenuState(null);
+    setTargetEditingDate(dateStr);
+    setEditDateInput(dateStr);
+    setIsEditDateModalOpen(true);
+  };
+
+  // Xác nhận đổi ngày sang ngày mới
+  const handleConfirmEditDate = () => {
+    if (!editDateInput || !isValidDDMMYYYY(editDateInput)) {
+      showToast('Vui lòng chọn ngày hợp lệ (định dạng dd/mm/yyyy)!', 'error');
+      return;
+    }
+
+    const formattedNewDate = formatToDDMMYYYY(editDateInput);
+
+    if (formattedNewDate === targetEditingDate) {
+      setIsEditDateModalOpen(false);
+      return;
+    }
+
+    if (attendanceDates.includes(formattedNewDate)) {
+      showToast(`Ngày ${formattedNewDate} đã có trong danh sách bảng điểm danh!`, 'error');
+      return;
+    }
+
+    // 1. Cập nhật dữ liệu điểm danh của học sinh
+    setAttendanceData((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((id) => {
+        const row = next[id];
+        const hasAbsence = row.absences.some((a) => a.date === targetEditingDate);
+        if (hasAbsence) {
+          const updatedAbsences = row.absences.map((a) =>
+            a.date === targetEditingDate ? { ...a, date: formattedNewDate } : a
+          );
+          next[id] = {
+            ...row,
+            absences: updatedAbsences,
+            isDirty: true,
+          };
+        }
+      });
+      return next;
+    });
+
+    // 2. Cập nhật ngày trong danh sách thủ công nếu có
+    setManualAddedDates((prev) => {
+      const withoutOld = prev.filter((d) => d !== targetEditingDate);
+      return [...withoutOld, formattedNewDate];
+    });
+
+    setIsEditDateModalOpen(false);
+    showToast(`Đã đổi ngày ${targetEditingDate} thành ${formattedNewDate}! Nhấn "Lưu điểm danh" để lưu.`);
+  };
+
+  // Mở popup xác nhận xóa ngày
+  const handleStartDeleteDate = (dateStr: string) => {
+    setDateMenuState(null);
+    setTargetDeletingDate(dateStr);
+    setIsDeleteDateModalOpen(true);
+  };
+
+  // Xác nhận xóa ngày
+  const handleConfirmDeleteDate = () => {
+    if (!targetDeletingDate) return;
+
+    // 1. Xóa các bản ghi vắng trong ngày này khỏi attendanceData
+    setAttendanceData((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((id) => {
+        const row = next[id];
+        const hasAbsence = row.absences.some((a) => a.date === targetDeletingDate);
+        if (hasAbsence) {
+          const updatedAbsences = row.absences.filter((a) => a.date !== targetDeletingDate);
+          next[id] = {
+            ...row,
+            absentCount: updatedAbsences.length,
+            absences: updatedAbsences,
+            isDirty: true,
+          };
+        }
+      });
+      return next;
+    });
+
+    // 2. Xóa khỏi danh sách ngày thêm thủ công
+    setManualAddedDates((prev) => prev.filter((d) => d !== targetDeletingDate));
+
+    setIsDeleteDateModalOpen(false);
+    showToast(`Đã xóa ngày ${targetDeletingDate}! Nhấn "Lưu điểm danh" để cập nhật.`);
   };
 
   // =========================================================================
@@ -310,40 +483,14 @@ export const AttendanceView: React.FC = () => {
     }
   };
 
-  const handleSaveSingle = async (studentId: string) => {
-    const row = attendanceData[studentId];
-    if (!row || !activeClassId) return;
-
-    try {
-      await api.batchSyncAttendance(activeClassId, [
-        {
-          studentId: row.studentId,
-          absences: row.absences.map((a) => ({
-            date: a.date,
-            status: a.status,
-            notes: a.notes || '',
-          })),
-        },
-      ]);
-
-      setAttendanceData((prev) => ({
-        ...prev,
-        [studentId]: { ...prev[studentId], isDirty: false },
-      }));
-
-      showToast(`Đã lưu điểm danh cho em ${row.holyName} ${row.fullName}!`);
-    } catch (err: any) {
-      showToast('Lỗi: ' + (err.message || ''), 'error');
-    }
-  };
-
-  // Danh sách học sinh sau khi lọc tìm kiếm
+  // Danh sách học sinh sau khi lọc tìm kiếm và luôn sắp xếp theo Alphabet tính bằng tên
   const filteredStudentRows = useMemo(() => {
     const list = Object.values(attendanceData);
-    if (!searchQuery.trim()) return list;
+    const sorted = sortStudentsByVietnameseName(list);
+    if (!searchQuery.trim()) return sorted;
 
     const query = searchQuery.toLowerCase().trim();
-    return list.filter(
+    return sorted.filter(
       (r) =>
         r.fullName.toLowerCase().includes(query) ||
         r.holyName.toLowerCase().includes(query) ||
@@ -381,17 +528,6 @@ export const AttendanceView: React.FC = () => {
     };
   }, [attendanceData, todayDateStr]);
 
-  // Thống kê tổng quan cả năm (Dành cho chế độ Điểm danh sau)
-  const fullYearStats = useMemo(() => {
-    const all = Object.values(attendanceData);
-    const totalStudents = all.length;
-    const absentStudents = all.filter((r) => r.absentCount > 0).length;
-    const fullAttendanceStudents = totalStudents - absentStudents;
-    const totalAbsenceDays = all.reduce((sum, r) => sum + r.absentCount, 0);
-
-    return { totalStudents, absentStudents, fullAttendanceStudents, totalAbsenceDays };
-  }, [attendanceData]);
-
   const hasUnsavedChanges = Object.values(attendanceData).some((r) => r.isDirty);
 
   return (
@@ -399,11 +535,10 @@ export const AttendanceView: React.FC = () => {
       {/* Toast Notification */}
       {toastMessage && (
         <div
-          className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl flex items-center gap-2.5 shadow-lg text-xs font-semibold border ${
-            toastMessage.type === 'success'
+          className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl flex items-center gap-2.5 shadow-lg text-xs font-semibold border ${toastMessage.type === 'success'
               ? 'bg-surface-container-lowest text-emerald-800 border-emerald-300'
               : 'bg-surface-container-lowest text-rose-800 border-rose-300'
-          }`}
+            }`}
         >
           {toastMessage.type === 'success' ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -424,7 +559,7 @@ export const AttendanceView: React.FC = () => {
                 <span>
                   {viewMode === 'TODAY'
                     ? `Điểm danh hôm nay (${formatDisplayDate(todayDateStr)})`
-                    : 'Điểm danh sau (Thủ công theo ngày)'}
+                    : 'Điểm danh tổng quát'}
                 </span>
               </span>
               <span className="text-xs text-outline">• Niên khóa {activeClass?.academicYear || '2026 - 2027'}</span>
@@ -435,29 +570,30 @@ export const AttendanceView: React.FC = () => {
             <p className="text-xs text-on-surface-variant">
               {viewMode === 'TODAY'
                 ? 'Nhấn trực tiếp vào ô để chuyển đổi: Tick 1 lần (V - Vắng không phép), Tick 2 lần (VP - Vắng có phép), Tick 3 lần (Đi học).'
-                : 'Xem và tự điền ngày nghỉ cụ thể cho các buổi học đã qua trong năm học.'}
+                : 'Bảng điểm danh tổng quát theo từng ngày. Nhấn trực tiếp vào ô để chuyển đổi: 1 lần (V), 2 lần (VP), 3 lần (Đi học). Bấm "Thêm ngày" nếu muốn điểm danh bổ sung.'}
             </p>
           </div>
 
           {/* Action Buttons & Switch Mode Button */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-nowrap shrink-0">
+
             {/* Nút Chuyển Đổi Chế Độ Điểm Danh */}
             {viewMode === 'TODAY' ? (
               <button
-                onClick={() => setViewMode('MANUAL')}
-                className="px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                title="Tự điểm danh cho các ngày học trước"
+                onClick={() => setViewMode('GENERAL')}
+                className="px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
+                title="Xem bảng điểm danh tổng quát tất cả các ngày"
               >
-                <Clock className="w-3.5 h-3.5" />
-                <span>Điểm danh sau</span>
+                <Clock className="w-3.5 h-3.5 shrink-0" />
+                <span>Điểm danh tổng quát</span>
               </button>
             ) : (
               <button
                 onClick={() => setViewMode('TODAY')}
-                className="px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                className="px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
                 title="Quay lại điểm danh ngày hôm nay"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
+                <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
                 <span>Về điểm danh hôm nay</span>
               </button>
             )}
@@ -465,18 +601,18 @@ export const AttendanceView: React.FC = () => {
             <button
               onClick={fetchClassAttendance}
               disabled={isLoading}
-              className="px-3.5 py-2 rounded-xl border border-outline-variant/40 bg-surface hover:bg-surface-container-low text-on-surface-variant text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              className="px-3.5 py-2 rounded-xl border border-outline-variant/40 bg-surface hover:bg-surface-container-low text-on-surface-variant text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
             >
-              <RotateCcw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <RotateCcw className={`w-3.5 h-3.5 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
               <span>Tải lại</span>
             </button>
 
             <button
               onClick={handleSaveAll}
               disabled={isSaving || isLoading}
-              className="px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+              className="px-4 sm:px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs whitespace-nowrap shrink-0"
             >
-              <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
+              <Save className={`w-4 h-4 shrink-0 ${isSaving ? 'animate-spin' : ''}`} />
               <span>{isSaving ? 'Đang lưu...' : hasUnsavedChanges ? 'Lưu điểm danh' : 'Lưu điểm danh'}</span>
             </button>
           </div>
@@ -485,7 +621,7 @@ export const AttendanceView: React.FC = () => {
         {/* ========================================================================= */}
         {/* STAT CARDS CHO CHẾ ĐỘ MẶC ĐỊNH (HÔM NAY) */}
         {/* ========================================================================= */}
-        {viewMode === 'TODAY' ? (
+        {viewMode === 'TODAY' && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-outline-variant/20">
             {/* Sĩ số */}
             <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
@@ -528,51 +664,6 @@ export const AttendanceView: React.FC = () => {
               <div>
                 <div className="text-[11px] text-on-surface-variant font-medium">Vắng không phép</div>
                 <div className="text-base font-bold text-rose-600 mt-0.5">{todayStats.absentWithoutPerm} <span className="text-xs font-normal text-outline">em</span></div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* ========================================================================= */
-          /* STAT CARDS CHO CHẾ ĐỘ ĐIỂM DANH SAU (CẢ NĂM) */
-          /* ========================================================================= */
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-outline-variant/20">
-            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center font-semibold shrink-0">
-                <Users className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-[11px] text-on-surface-variant font-medium">Tổng sĩ số</div>
-                <div className="text-base font-bold text-on-surface mt-0.5">{fullYearStats.totalStudents} <span className="text-xs font-normal text-outline">em</span></div>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-surface-container text-emerald-700 flex items-center justify-center font-semibold shrink-0">
-                <UserCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-[11px] text-on-surface-variant font-medium">Chuyên cần 100%</div>
-                <div className="text-base font-bold text-emerald-800 mt-0.5">{fullYearStats.fullAttendanceStudents} <span className="text-xs font-normal text-outline">em</span></div>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-surface-container text-amber-700 flex items-center justify-center font-semibold shrink-0">
-                <UserX className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-[11px] text-on-surface-variant font-medium">Có vắng mặt</div>
-                <div className="text-base font-bold text-on-surface mt-0.5">{fullYearStats.absentStudents} <span className="text-xs font-normal text-outline">em</span></div>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/25 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center font-semibold shrink-0">
-                <Calendar className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-[11px] text-on-surface-variant font-medium">Tổng ngày vắng</div>
-                <div className="text-base font-bold text-on-surface mt-0.5">{fullYearStats.totalAbsenceDays} <span className="text-xs font-normal text-outline">buổi</span></div>
               </div>
             </div>
           </div>
@@ -752,31 +843,97 @@ export const AttendanceView: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* 2. GIAO DIỆN "ĐIỂM DANH SAU": THỦ CÔNG ĐẦY ĐỦ TỪNG NGÀY & GHI CHÚ NHƯ CŨ */}
+      {/* 2. GIAO DIỆN "ĐIỂM DANH TỔNG QUÁT": CÁC CỘT DẠNG EXCEL TƯƠNG TÁC TỪNG NGÀY */}
       {/* ========================================================================= */}
-      {viewMode === 'MANUAL' && (
+      {viewMode === 'GENERAL' && (
         <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto relative max-h-[72vh]">
+          {/* Hướng dẫn ký hiệu nhỏ gọn */}
+          <div className="p-2.5 sm:p-3 bg-surface-container-low/40 border-b border-outline-variant/20 flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs text-on-surface-variant">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-4">
+              <span className="font-semibold text-on-surface hidden xs:inline">Ký hiệu trong ô:</span>
+              <span className="flex items-center gap-1">
+                <span className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center bg-rose-50 text-rose-600 font-bold border border-rose-300 text-[10px] sm:text-[11px]">V</span>
+                <span>Vắng không phép</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center bg-emerald-50 text-emerald-600 font-bold border border-emerald-300 text-[10px] sm:text-[11px]">VP</span>
+                <span>Vắng có phép</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center bg-white border border-outline-variant/40 text-[10px]"></span>
+                <span>Ô trống = Đi học</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] sm:text-[11px] text-outline italic">
+                * Nhấn trực tiếp vào ô: V ➔ VP ➔ Đi học
+              </span>
+              <button
+                type="button"
+                onClick={handleOpenAddDateModal}
+                className="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs border border-primary/20 transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Thêm ngày</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto relative max-h-[75vh]">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="sticky top-0 z-30 bg-surface-container-low border-b-2 border-outline-variant/50 text-on-surface font-semibold">
+              <thead className="sticky top-0 z-30 bg-surface-container-low border-b-2 border-outline-variant/50 text-on-surface font-semibold select-none">
                 <tr>
-                  <th className="p-3 text-center w-12 sticky left-0 bg-surface-container-low z-40 border-r border-outline-variant/40">
+                  {/* Cột 1 cố định: STT */}
+                  <th className="p-3 text-center w-12 min-w-[48px] max-w-[48px] sticky left-0 top-0 bg-surface-container-low z-40 border-r border-outline-variant/40">
                     STT
                   </th>
-                  <th className="p-3 min-w-[220px] sticky left-12 bg-surface-container-low z-40 border-r border-outline-variant/40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+
+                  {/* Cột 2 cố định khung: Tên thánh & Họ và Tên */}
+                  <th className="p-3 w-[240px] sm:w-[260px] min-w-[240px] sm:min-w-[260px] max-w-[240px] sm:max-w-[260px] sticky left-12 top-0 bg-surface-container-low z-40 border-r border-outline-variant/40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     TÊN THÁNH &amp; HỌ VÀ TÊN
                   </th>
-                  <th className="p-3 text-center w-24">
-                    GIỚI TÍNH
-                  </th>
-                  <th className="p-3 text-center w-36">
-                    SỐ NGÀY NGHỈ
-                  </th>
-                  <th className="p-3 min-w-[360px]">
-                    CHI TIẾT CÁC NGÀY NGHỈ (NGÀY, LOẠI PHÉP &amp; GHI CHÚ)
-                  </th>
-                  <th className="p-3 text-center w-24">
-                    THAO TÁC
+
+                  {/* Các cột ngày tự sinh từ các buổi vắng + ngày thêm thủ công (ở giữa, trượt ngang được) */}
+                  {attendanceDates.map((dateStr) => {
+                    const absentOnDate = Object.values(attendanceData).filter((r) =>
+                      r.absences.some((a) => a.date === dateStr)
+                    ).length;
+
+                    return (
+                      <th
+                        key={dateStr}
+                        className="py-2 px-1 text-center w-24 sm:w-26 min-w-[92px] max-w-[105px] border-r border-outline-variant/35 bg-surface-container-low shrink-0 select-none group"
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          <span className="text-[11px] sm:text-xs font-bold text-on-surface whitespace-nowrap">
+                            {dateStr}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenDateActionMenu(e, dateStr)}
+                            title={`Tùy chọn ngày ${dateStr} (chỉnh sửa hoặc xóa)`}
+                            className="p-1 rounded-md text-outline hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <div className="text-[10px] font-normal text-outline mt-0.5 whitespace-nowrap">
+                          {absentOnDate > 0 ? (
+                            <span className="text-rose-600 font-semibold">{absentOnDate} vắng</span>
+                          ) : (
+                            <span className="text-emerald-700 font-medium">Đủ</span>
+                          )}
+                        </div>
+                      </th>
+                    );
+                  })}
+
+                  {/* Cột đệm linh hoạt (spacer) giữa các ngày và cột Tổng vắng */}
+                  <th className="p-0 border-none bg-surface-container-low min-w-0"></th>
+
+                  {/* Cột 3 cố định bên phải: Tổng Vắng */}
+                  <th className="p-3 text-center w-24 sm:w-28 min-w-[96px] max-w-[110px] sticky right-0 top-0 bg-surface-container-low z-40 border-l border-outline-variant/40 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">
+                    TỔNG VẮNG
                   </th>
                 </tr>
               </thead>
@@ -784,7 +941,7 @@ export const AttendanceView: React.FC = () => {
               <tbody className="divide-y divide-outline-variant/40 bg-surface-container-lowest">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={6} className="p-10 text-center text-on-surface-variant">
+                    <td colSpan={4 + attendanceDates.length} className="p-10 text-center text-on-surface-variant">
                       <div className="flex items-center justify-center gap-2 text-xs">
                         <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                         <span>Đang tải danh sách học sinh &amp; dữ liệu điểm danh...</span>
@@ -793,30 +950,36 @@ export const AttendanceView: React.FC = () => {
                   </tr>
                 ) : filteredStudentRows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-10 text-center text-on-surface-variant text-xs">
+                    <td colSpan={4 + attendanceDates.length} className="p-10 text-center text-on-surface-variant text-xs">
                       Không tìm thấy học sinh nào phù hợp với từ khóa &quot;{searchQuery}&quot;
                     </td>
                   </tr>
                 ) : (
                   filteredStudentRows.map((row, idx) => {
-                    const isFemale = row.gender === 'Nữ';
+                    const stickyBg = row.isDirty
+                      ? 'bg-amber-50/95 group-hover:bg-amber-100/90'
+                      : 'bg-surface-container-lowest group-hover:bg-surface-container-low/90';
 
                     return (
                       <tr
                         key={row.studentId}
-                        className={`hover:bg-surface-container-low/60 transition-colors ${
-                          row.isDirty ? 'bg-amber-50/30' : ''
+                        className={`group hover:bg-surface-container-low/60 transition-colors ${
+                          row.isDirty ? 'bg-amber-50/25' : ''
                         }`}
                       >
-                        {/* Column 1: STT */}
-                        <td className="p-3 text-center font-bold text-outline sticky left-0 bg-surface-container-lowest group-hover:bg-surface-container-low/60 z-20 border-r border-outline-variant/40">
+                        {/* 1. STT (cố định bên trái) */}
+                        <td
+                          className={`p-3 text-center font-bold text-outline sticky left-0 z-20 border-r border-outline-variant/40 w-12 min-w-[48px] max-w-[48px] ${stickyBg}`}
+                        >
                           {idx + 1}
                         </td>
 
-                        {/* Column 2: Tên Thánh & Họ Và Tên */}
-                        <td className="p-3 sticky left-12 bg-surface-container-lowest group-hover:bg-surface-container-low/60 z-20 border-r border-outline-variant/40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
-                          <div>
-                            <div className="font-semibold text-on-surface text-xs leading-snug">
+                        {/* 2. Tên Thánh & Họ Và Tên (cố định khung 240px - 260px) */}
+                        <td
+                          className={`p-3 sticky left-12 z-20 border-r border-outline-variant/40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] w-[240px] sm:w-[260px] min-w-[240px] sm:min-w-[260px] max-w-[240px] sm:max-w-[260px] ${stickyBg}`}
+                        >
+                          <div className="truncate">
+                            <div className="font-semibold text-on-surface text-xs leading-snug truncate">
                               <span className="text-primary font-bold">{row.holyName}</span> {row.fullName}
                             </div>
                             <div className="text-[10px] text-outline font-mono">
@@ -825,133 +988,55 @@ export const AttendanceView: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* Column 3: Giới tính */}
-                        <td className="p-3 text-center">
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${
-                              isFemale
-                                ? 'bg-rose-50/70 text-rose-700 border-rose-200/60'
-                                : 'bg-sky-50/70 text-sky-700 border-sky-200/60'
-                            }`}
-                          >
-                            {row.gender}
-                          </span>
-                        </td>
+                        {/* 3. Các ô Excel tương tác theo từng ngày (ở giữa) */}
+                        {attendanceDates.map((dateStr) => {
+                          const cellStatus = getCellStatus(row.studentId, dateStr);
 
-                        {/* Column 4: Số ngày nghỉ (Chỉ hiển thị tổng số ngày nghỉ) */}
-                        <td className="p-3 text-center">
+                          return (
+                            <td
+                              key={dateStr}
+                              className="p-1 text-center w-20 sm:w-22 min-w-[80px] max-w-[88px] border-r border-outline-variant/35 align-middle shrink-0"
+                            >
+                              <div className="flex items-center justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCycleCellAttendance(row.studentId, dateStr)}
+                                  title={`Em ${row.fullName} - Ngày ${dateStr}: Click để đổi (V -> VP -> Đi học)`}
+                                  className={`w-11 sm:w-13 h-7 sm:h-8 rounded-lg font-bold transition-all duration-150 flex items-center justify-center select-none cursor-pointer active:scale-95 text-xs ${
+                                    cellStatus === 'V'
+                                      ? 'bg-rose-50 text-rose-600 border border-rose-400 hover:bg-rose-100 shadow-2xs font-extrabold'
+                                      : cellStatus === 'VP'
+                                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-400 hover:bg-emerald-100 shadow-2xs font-extrabold'
+                                      : 'bg-white hover:bg-surface-container border border-outline-variant/35 hover:border-primary/50 text-transparent'
+                                  }`}
+                                >
+                                  {cellStatus === 'V' ? (
+                                    <span className="font-extrabold tracking-wider">V</span>
+                                  ) : cellStatus === 'VP' ? (
+                                    <span className="font-extrabold tracking-wider">VP</span>
+                                  ) : null}
+                                </button>
+                              </div>
+                            </td>
+                          );
+                        })}
+
+                        {/* Cột đệm linh hoạt ở giữa */}
+                        <td className="p-0 border-none min-w-0"></td>
+
+                        {/* 4. Cột Tổng số ngày nghỉ (cố định bên phải) */}
+                        <td
+                          className={`p-2.5 text-center sticky right-0 z-20 border-l border-outline-variant/40 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)] align-middle w-24 sm:w-28 min-w-[96px] max-w-[110px] ${stickyBg}`}
+                        >
                           <span
-                            className={`inline-flex items-center justify-center px-3 py-1 rounded-lg text-xs font-bold border ${
+                            className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-lg text-xs font-bold border ${
                               row.absences.length === 0
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 : 'bg-amber-50 text-amber-800 border-amber-200'
                             }`}
                           >
-                            {row.absences.length === 0 ? '0 ngày' : `${row.absences.length} ngày`}
+                            {row.absences.length} buổi
                           </span>
-                        </td>
-
-                        {/* Column 5: Chi tiết các ngày nghỉ & Nút Thêm ngày nghỉ */}
-                        <td className="p-3">
-                          {row.absences.length === 0 ? (
-                            <div className="flex items-center justify-between gap-3 py-1">
-                              <div className="text-on-surface-variant text-xs flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                <span className="text-emerald-700 font-medium">Đi học đầy đủ</span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleAddAbsenceQuick(row.studentId)}
-                                className="px-3 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs border border-primary/20 transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                              >
-                                <Plus className="w-3.5 h-3.5" />
-                                <span>Thêm ngày nghỉ</span>
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {row.absences.map((abs, absIdx) => (
-                                <div
-                                  key={absIdx}
-                                  className="p-2 rounded-lg bg-surface-container-low/70 border border-outline-variant/25 flex flex-wrap items-center gap-2 text-xs"
-                                >
-                                  <span className="font-semibold text-outline text-[11px] w-5 text-center shrink-0">
-                                    #{absIdx + 1}
-                                  </span>
-
-                                  {/* Ngày vắng (Định dạng DD/MM/YYYY không phụ thuộc cài đặt máy) */}
-                                  <CustomDatePicker
-                                    value={abs.date}
-                                    onChange={(val) =>
-                                      handleAbsenceDetailChange(row.studentId, absIdx, 'date', val)
-                                    }
-                                  />
-
-                                  {/* Phân loại phép / không phép */}
-                                  <select
-                                    value={abs.status}
-                                    onChange={(e) =>
-                                      handleAbsenceDetailChange(row.studentId, absIdx, 'status', e.target.value)
-                                    }
-                                    className={`px-2 py-1 rounded-md text-xs font-medium border outline-none cursor-pointer ${
-                                      abs.status === 'VANG_CO_PHEP'
-                                        ? 'bg-amber-50 text-amber-900 border-amber-200'
-                                        : 'bg-rose-50 text-rose-900 border-rose-200'
-                                    }`}
-                                  >
-                                    <option value="VANG_CO_PHEP">Có phép</option>
-                                    <option value="VANG_KHONG_PHEP">Không phép</option>
-                                  </select>
-
-                                  {/* Ghi chú lý do */}
-                                  <input
-                                    type="text"
-                                    value={abs.notes || ''}
-                                    onChange={(e) =>
-                                      handleAbsenceDetailChange(row.studentId, absIdx, 'notes', e.target.value)
-                                    }
-                                    placeholder="Lý do nghỉ..."
-                                    className="flex-1 min-w-[130px] bg-surface-container-lowest px-2 py-1 rounded-md border border-outline-variant/30 text-xs text-on-surface placeholder:text-outline outline-none focus:border-primary/60"
-                                  />
-
-                                  {/* Nút xóa ngày nghỉ này */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveAbsence(row.studentId, absIdx)}
-                                    title="Xóa ngày nghỉ này"
-                                    className="p-1 rounded text-outline hover:text-customError hover:bg-surface-container transition-colors cursor-pointer shrink-0"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              ))}
-
-                              <button
-                                type="button"
-                                onClick={() => handleAddAbsenceQuick(row.studentId)}
-                                className="text-[11px] font-medium text-primary hover:underline flex items-center gap-1 cursor-pointer pt-0.5"
-                              >
-                                <Plus className="w-3 h-3" />
-                                <span>Thêm ngày nghỉ</span>
-                              </button>
-                            </div>
-                          )}
-                        </td>
-
-                        {/* Column 6: Thao tác / Lưu riêng */}
-                        <td className="p-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleSaveSingle(row.studentId)}
-                            disabled={!row.isDirty}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                              row.isDirty
-                                ? 'bg-primary text-white hover:bg-primary/90 cursor-pointer shadow-2xs'
-                                : 'bg-surface-container-low text-outline cursor-default opacity-50'
-                            }`}
-                          >
-                            {row.isDirty ? 'Lưu' : 'Đã lưu'}
-                          </button>
                         </td>
                       </tr>
                     );
@@ -959,6 +1044,234 @@ export const AttendanceView: React.FC = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* POPUP / MODAL THÊM NGÀY ĐIỂM DANH MỚI */}
+      {/* ========================================================================= */}
+      {isAddDateModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fadeIn"
+          onClick={() => setIsAddDateModalOpen(false)}
+        >
+          <div
+            className="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 shadow-xl max-w-sm w-full p-5 space-y-4 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-on-surface">Thêm ngày điểm danh</h3>
+                  <p className="text-[11px] text-outline">Điểm danh bổ sung cho ngày đã qua</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddDateModalOpen(false)}
+                className="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-on-surface-variant block">
+                Chọn ngày điểm danh:
+              </label>
+              <div className="w-full">
+                <CustomDatePicker
+                  value={modalDateInput}
+                  onChange={(val) => setModalDateInput(val)}
+                  placeholder="DD/MM/YYYY"
+                />
+              </div>
+              <p className="text-[11px] text-outline italic">
+                * Sau khi tạo, cột ngày sẽ tự động được xếp đúng thứ tự thời gian trên bảng. Mặc định tất cả học sinh là có đi học.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
+              <button
+                type="button"
+                onClick={() => setIsAddDateModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-outline-variant/40 bg-surface hover:bg-surface-container-low text-on-surface-variant text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAddDate}
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Tạo ngày</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dropdown Menu tùy chọn cho cột ngày (Chỉnh sửa / Xóa) */}
+      {dateMenuState && (
+        <div className="fixed inset-0 z-50 select-none" onClick={() => setDateMenuState(null)}>
+          <div
+            style={{
+              position: 'fixed',
+              top: `${dateMenuState.top}px`,
+              left: `${dateMenuState.left}px`,
+            }}
+            className="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-xl py-1.5 min-w-[150px] z-50 animate-fadeIn text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-3 py-1.5 text-[11px] font-bold text-on-surface-variant border-b border-outline-variant/30 flex items-center justify-between bg-surface-container-low/50">
+              <span>Ngày {dateMenuState.dateStr}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleStartEditDate(dateMenuState.dateStr)}
+              className="w-full px-3 py-2 text-left hover:bg-primary/10 hover:text-primary text-on-surface flex items-center gap-2 transition-colors cursor-pointer font-medium"
+            >
+              <Pencil className="w-3.5 h-3.5 text-primary" />
+              <span>Đổi ngày</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleStartDeleteDate(dateMenuState.dateStr)}
+              className="w-full px-3 py-2 text-left hover:bg-rose-50 hover:text-rose-600 text-rose-600 flex items-center gap-2 transition-colors cursor-pointer font-medium border-t border-outline-variant/20"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+              <span>Xóa ngày</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Chỉnh sửa ngày điểm danh */}
+      {isEditDateModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fadeIn"
+          onClick={() => setIsEditDateModalOpen(false)}
+        >
+          <div
+            className="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 shadow-xl max-w-sm w-full p-5 space-y-4 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                  <Pencil className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-on-surface">Chỉnh sửa ngày điểm danh</h3>
+                  <p className="text-[11px] text-outline">Đang sửa ngày: {targetEditingDate}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditDateModalOpen(false)}
+                className="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-on-surface-variant block">
+                Chọn ngày mới thay thế:
+              </label>
+              <div className="w-full">
+                <CustomDatePicker
+                  value={editDateInput}
+                  onChange={(val) => setEditDateInput(val)}
+                  placeholder="DD/MM/YYYY"
+                />
+              </div>
+              <p className="text-[11px] text-outline italic">
+                * Dữ liệu điểm danh của ngày {targetEditingDate} sẽ chuyển sang ngày mới và cột sẽ tự động xếp lại thứ tự.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
+              <button
+                type="button"
+                onClick={() => setIsEditDateModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-outline-variant/40 bg-surface hover:bg-surface-container-low text-on-surface-variant text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmEditDate}
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Lưu thay đổi</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xác nhận xóa ngày điểm danh */}
+      {isDeleteDateModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fadeIn"
+          onClick={() => setIsDeleteDateModalOpen(false)}
+        >
+          <div
+            className="bg-surface-container-lowest rounded-2xl border border-rose-200 shadow-xl max-w-sm w-full p-5 space-y-4 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
+                  <Trash2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-on-surface">Xóa ngày điểm danh</h3>
+                  <p className="text-[11px] text-rose-600 font-semibold">Cảnh báo hành động</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDeleteDateModalOpen(false)}
+                className="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs text-on-surface">
+              <p>
+                Bạn có chắc chắn muốn xóa ngày <strong className="text-rose-600 font-bold">{targetDeletingDate}</strong> khỏi bảng điểm danh?
+              </p>
+              <div className="p-3 bg-rose-50/80 border border-rose-200 rounded-xl text-rose-800 text-[11px] leading-relaxed">
+                Tất cả ghi nhận vắng (V, VP) của học sinh trong ngày này sẽ bị xóa khỏi bảng. Sau khi xóa, bạn cần bấm <strong>Lưu điểm danh</strong> để đồng bộ vào hệ thống.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
+              <button
+                type="button"
+                onClick={() => setIsDeleteDateModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-outline-variant/40 bg-surface hover:bg-surface-container-low text-on-surface-variant text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteDate}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Xác nhận xóa</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

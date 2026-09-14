@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Phone,
   Edit2,
@@ -22,6 +22,7 @@ import { Student } from '../../types';
 import { getFullCatechistNames } from '../../utils/catechistHelper';
 import { exportClassRosterToExcel } from '../../utils/excelExport';
 import { formatToDDMMYYYY } from '../../utils/dateUtils';
+import { sortStudentsByVietnameseName } from '../../utils/nameUtils';
 
 type EditFieldType =
   | 'NAME'
@@ -62,9 +63,11 @@ export const CatechistClassOverview: React.FC = () => {
     classes.find((c) => c.id === selectedClassId) ||
     classes[0];
 
-  const classStudents = currentClass
-    ? students.filter((s) => s.classId === currentClass.id)
-    : [];
+  const classStudents: Student[] = useMemo(() => {
+    return currentClass
+      ? sortStudentsByVietnameseName(students.filter((s) => s.classId === currentClass.id))
+      : [];
+  }, [currentClass, students]);
 
   // Tìm kiếm nhanh trong lớp
   const [searchTerm, setSearchTerm] = useState('');

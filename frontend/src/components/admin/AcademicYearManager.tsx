@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import {
   Calendar,
   CalendarDays,
-  Sparkles,
+  CalendarRange,
+  RotateCcw,
   CheckCircle2,
   AlertCircle,
   History,
@@ -18,7 +19,8 @@ export const AcademicYearManager: React.FC = () => {
     selectedAcademicYear,
     setSelectedAcademicYear,
     availableAcademicYears,
-    promoteToNewAcademicYear
+    promoteToNewAcademicYear,
+    refreshData
   } = useApp();
 
   // Tính toán niên khóa kế tiếp mặc định (VD: 2026 - 2027 -> 2027 - 2028)
@@ -77,26 +79,33 @@ export const AcademicYearManager: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col space-y-6 pb-12 font-body">
       {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-primary via-primary-container/80 to-tertiary-container/30 rounded-3xl p-6 sm:p-8 text-on-primary-container relative overflow-hidden shadow-lg border border-primary/20">
-        <div
-          className="absolute -right-10 -bottom-10 w-64 h-64 opacity-15 pointer-events-none rounded-full"
-          style={{
-            backgroundImage: 'radial-gradient(#87d5e8 3px, transparent 3px)',
-            backgroundSize: '20px 20px'
-          }}
-        ></div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface rounded-2xl p-6 border border-outline-variant/30 shadow-xs relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary-container/20 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold mb-3">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Hệ Thống Quản Trị Đa Niên Khóa</span>
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="px-2.5 py-0.5 rounded-full bg-primary text-white font-extrabold text-[10px] uppercase tracking-wider">
+              Ban Điều Hành Giáo Lý
+            </span>
+            <span className="text-xs text-on-surface-variant">• Niên khóa {selectedAcademicYear || '2026 - 2027'}</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold font-sans tracking-tight mb-2">
-            Quản Lý Niên Khóa & Xét Lên Lớp Tự Động
-          </h2>
-          <p className="text-xs sm:text-sm text-on-primary-container/80 leading-relaxed font-medium">
-            Khởi tạo năm học mới với một nút bấm. Hệ thống tự động phân loại học sinh đủ điều kiện lên lớp tiếp theo, giữ nguyên 100% học bạ và điểm số lịch sử các năm cũ.
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-primary font-sans flex items-center gap-2.5">
+            <CalendarRange className="w-8 h-8 text-primary shrink-0" />
+            <span>Quản Lý Niên Khóa & Xét Lên Lớp</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-on-surface-variant mt-1">
+            Khởi tạo năm học mới tự động phân loại học sinh đủ điều kiện lên lớp, bảo lưu 100% học bạ và lịch sử đào tạo.
           </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 relative z-10">
+          <button
+            onClick={() => refreshData()}
+            className="px-3.5 py-2.5 bg-surface-container-high hover:bg-surface-container text-on-surface text-xs font-bold rounded-xl border border-outline-variant/30 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>Làm mới</span>
+          </button>
         </div>
       </div>
 
@@ -212,9 +221,9 @@ export const AcademicYearManager: React.FC = () => {
             <button
               onClick={() => setShowConfirmModal(true)}
               disabled={isProcessing || !fromYear || !toYear}
-              className="px-6 py-2.5 bg-primary text-white hover:bg-primary/90 font-bold rounded-full text-xs transition-all shadow-md hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-6 py-2.5 bg-primary text-white hover:bg-primary-dark font-bold rounded-xl text-xs transition-all shadow-sm hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              <Sparkles className="w-4 h-4 text-amber-300" />
+              <CalendarRange className="w-4 h-4" />
               <span>Khởi tạo Niên Khóa & Xét Lên Lớp</span>
             </button>
           </div>

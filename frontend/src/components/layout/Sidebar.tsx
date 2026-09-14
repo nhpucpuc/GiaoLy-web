@@ -10,7 +10,7 @@ import {
   FileSpreadsheet,
   CalendarCheck,
   LogOut,
-  Sparkles,
+  CalendarRange,
   KeyRound,
   Trash2
 } from 'lucide-react';
@@ -148,7 +148,7 @@ export const Sidebar: React.FC = () => {
                   }`
                 }
               >
-                <Sparkles className="w-5 h-5 text-amber-500" />
+                <CalendarRange className="w-5 h-5" />
                 <span>Niên khóa & Lên lớp</span>
               </NavLink>
 
@@ -156,12 +156,12 @@ export const Sidebar: React.FC = () => {
                 to="/admin/thung-rac"
                 className={({ isActive }) =>
                   `w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
-                    ? 'bg-rose-600 text-white shadow-sm shadow-rose-600/30'
-                    : 'text-on-surface-variant hover:bg-surface-container hover:text-rose-600 dark:hover:text-rose-400'
+                    ? 'bg-primary text-white shadow-sm shadow-primary/30'
+                    : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
                   }`
                 }
               >
-                <Trash2 className="w-5 h-5 text-rose-500" />
+                <Trash2 className="w-5 h-5" />
                 <span>Thùng rác học sinh</span>
               </NavLink>
             </>
@@ -229,9 +229,9 @@ export const Sidebar: React.FC = () => {
               <div className="pt-2">
                 <button
                   onClick={() => setIsChangePasswordOpen(true)}
-                  className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-secondary/10 hover:text-secondary border border-transparent hover:border-secondary/30 transition-all cursor-pointer text-left"
+                  className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all cursor-pointer text-left"
                 >
-                  <KeyRound className="w-5 h-5 text-secondary shrink-0" />
+                  <KeyRound className="w-5 h-5 shrink-0" />
                   <span>Đổi mật khẩu</span>
                 </button>
               </div>

@@ -27,6 +27,7 @@ import { GradeEntryView } from '../catechist/GradeEntryView';
 import { StudentTranscriptModal } from '../shared/StudentTranscriptModal';
 import { exportClassRosterToExcel } from '../../utils/excelExport';
 import { formatToDDMMYYYY } from '../../utils/dateUtils';
+import { sortStudentsByVietnameseName } from '../../utils/nameUtils';
 
 type EditFieldType =
   | 'NAME'
@@ -88,9 +89,11 @@ export const ClassDetailView: React.FC = () => {
     }
   }, [currentClass?.id]);
 
-  const classStudents = currentClass
-    ? students.filter((s) => s.classId === currentClass.id)
-    : [];
+  const classStudents: Student[] = useMemo(() => {
+    return currentClass
+      ? sortStudentsByVietnameseName(students.filter((s) => s.classId === currentClass.id))
+      : [];
+  }, [currentClass, students]);
 
   // Tìm kiếm nhanh trong tab Lý Lịch
   const [searchTerm, setSearchTerm] = useState('');

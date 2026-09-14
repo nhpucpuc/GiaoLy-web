@@ -10,6 +10,7 @@ import {
   ConductType
 } from '../types';
 import { api } from '../services/api';
+import { sortStudentsByVietnameseName } from '../utils/nameUtils';
 
 interface AppContextType {
   currentRole: UserRole;
@@ -152,7 +153,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ]);
 
       setClasses(resClasses || []);
-      setStudents(resStudents || []);
+      setStudents(sortStudentsByVietnameseName(resStudents || []));
       setAnnouncements(resAnnouncements || []);
       setCatechists(resCatechists || []);
       if (Array.isArray(resYears) && resYears.length > 0) {

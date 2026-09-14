@@ -133,3 +133,17 @@ export function isValidDDMMYYYY(str: string): boolean {
 
   return true;
 }
+
+/**
+ * So sánh 2 chuỗi ngày tháng theo thứ tự thời gian tăng dần (cũ -> mới)
+ */
+export function compareDDMMYYYY(dateA: string, dateB: string): number {
+  const pA = parseDateParts(dateA);
+  const pB = parseDateParts(dateB);
+  if (!pA && !pB) return 0;
+  if (!pA) return 1;
+  if (!pB) return -1;
+  const timeA = new Date(pA.year, pA.month - 1, pA.day).getTime();
+  const timeB = new Date(pB.year, pB.month - 1, pB.day).getTime();
+  return timeA - timeB;
+}

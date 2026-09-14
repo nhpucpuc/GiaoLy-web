@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { parseDateToDDMMYYYY } from '../../common/utils/date-formatter';
+import { sortStudentsByVietnameseName } from '../../common/utils/vietnamese-sort';
 
 function mapStudentStatus(st?: string): any {
   if (!st) return 'DANG_HOC';
@@ -30,7 +31,7 @@ export class StudentsService {
       ];
     }
 
-    return this.prisma.student.findMany({
+    const students = await this.prisma.student.findMany({
       where,
       include: {
         class: {
@@ -38,8 +39,9 @@ export class StudentsService {
         },
         grades: true,
       },
-      orderBy: { fullName: 'asc' },
     });
+
+    return sortStudentsByVietnameseName(students);
   }
 
   async findDeleted(classId?: string, search?: string) {

@@ -3,6 +3,7 @@ import { FileSpreadsheet, Save, CheckCircle2, ArrowDownAZ, Filter, BookOpen, Ale
 import * as XLSX from 'xlsx';
 import { useApp } from '../../context/AppContext';
 import { getFullCatechistNames } from '../../utils/catechistHelper';
+import { compareVietnameseNames } from '../../utils/nameUtils';
 import { RankBadge } from '../shared/RankBadge';
 import { StudentTranscriptModal } from '../shared/StudentTranscriptModal';
 import { Student } from '../../types';
@@ -187,7 +188,7 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
           const scoreA = a.tb_cn !== null ? a.tb_cn : a.hk1_tb ?? -1;
           const scoreB = b.tb_cn !== null ? b.tb_cn : b.hk1_tb ?? -1;
           if (scoreB !== scoreA) return scoreB - scoreA;
-          return a.student.fullName.localeCompare(b.student.fullName);
+          return compareVietnameseNames(a.student.fullName, b.student.fullName);
         });
     }
 
@@ -201,12 +202,12 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
           const scoreA = a.tb_cn !== null ? a.tb_cn : a.hk1_tb ?? 0;
           const scoreB = b.tb_cn !== null ? b.tb_cn : b.hk1_tb ?? 0;
           if (scoreA !== scoreB) return scoreA - scoreB;
-          return a.student.fullName.localeCompare(b.student.fullName);
+          return compareVietnameseNames(a.student.fullName, b.student.fullName);
         });
     }
 
-    // Default 'ALL': Sắp xếp theo tên A-Z
-    return [...allCalculatedData].sort((a, b) => a.student.fullName.localeCompare(b.student.fullName));
+    // Default 'ALL': Sắp xếp theo tên A-Z (tính bằng Tên trước, Họ đệm sau)
+    return [...allCalculatedData].sort((a, b) => compareVietnameseNames(a.student.fullName, b.student.fullName));
   }, [allCalculatedData, filterMode, top4DistinctScores]);
 
   // Điều hướng phím Enter chuẩn Excel

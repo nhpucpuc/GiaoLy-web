@@ -18,6 +18,7 @@ import { api } from '../../services/api';
 import { useApp } from '../../context/AppContext';
 import { Student } from '../../types';
 import { GenderAvatar } from '../shared/GenderAvatar';
+import { sortStudentsByVietnameseName } from '../../utils/nameUtils';
 
 export const DeletedStudentsView: React.FC = () => {
   const { classes, refreshData } = useApp();
@@ -58,7 +59,7 @@ export const DeletedStudentsView: React.FC = () => {
 
   // Filtered students
   const filteredStudents = useMemo(() => {
-    return deletedStudents.filter((student) => {
+    const result = deletedStudents.filter((student) => {
       // 1. Search text
       const term = searchTerm.toLowerCase().trim();
       const matchSearch =
@@ -94,6 +95,8 @@ export const DeletedStudentsView: React.FC = () => {
 
       return matchSearch && matchClass && matchGrade;
     });
+
+    return sortStudentsByVietnameseName(result);
   }, [deletedStudents, searchTerm, selectedClassFilter, gradeFilter]);
 
   // Format date helper
@@ -188,36 +191,34 @@ export const DeletedStudentsView: React.FC = () => {
         </div>
       )}
 
-      {/* Header Banner */}
-      <div className="bg-surface-container-low rounded-3xl p-6 sm:p-8 border border-outline-variant/30 shadow-sm relative overflow-hidden">
-        <div className="absolute -right-8 -bottom-8 w-48 h-48 bg-rose-500/5 rounded-full blur-2xl pointer-events-none" />
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-          <div className="flex items-center space-x-4">
-            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 shadow-inner shrink-0">
-              <Trash2 className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="text-2xl font-bold text-on-surface font-sans">
-                  Thùng rác & Học sinh đã xóa
-                </h1>
-                <span className="px-2.5 py-0.5 text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 rounded-full">
-                  {deletedStudents.length} học sinh
-                </span>
-              </div>
-              <p className="text-sm text-on-surface-variant mt-1">
-                Kiểm soát các học sinh đã bị xóa mềm. Tất cả bảng điểm & lịch sử điểm danh vẫn được bảo lưu an toàn.
-              </p>
-            </div>
-          </div>
+      {/* Top Banner Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface rounded-2xl p-6 border border-outline-variant/30 shadow-xs relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary-container/20 rounded-full blur-2xl pointer-events-none" />
 
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="px-2.5 py-0.5 rounded-full bg-primary text-white font-extrabold text-[10px] uppercase tracking-wider">
+              Ban Điều Hành Giáo Lý
+            </span>
+            <span className="text-xs text-on-surface-variant">• {deletedStudents.length} học sinh trong thùng rác</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-primary font-sans flex items-center gap-2.5">
+            <Trash2 className="w-8 h-8 text-primary shrink-0" />
+            <span>Thùng Rác & Học Sinh Đã Xóa</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-on-surface-variant mt-1">
+            Kiểm soát các học sinh đã bị xóa mềm. Tất cả bảng điểm & lịch sử điểm danh vẫn được bảo lưu an toàn.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 relative z-10">
           <button
             onClick={fetchDeletedStudents}
             disabled={isLoading}
-            className="inline-flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/30 transition-all active:scale-95 shrink-0"
+            className="px-3.5 py-2.5 bg-surface-container-high hover:bg-surface-container text-on-surface text-xs font-bold rounded-xl border border-outline-variant/30 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
           >
             <RotateCcw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Tải lại dữ liệu</span>
+            <span>Làm mới</span>
           </button>
         </div>
       </div>
