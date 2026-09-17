@@ -38,8 +38,21 @@ export interface StudentAttendanceRow {
   code: string;
   absentCount: number;
   absences: AbsenceItem[];
+  initialAbsences?: AbsenceItem[];
   isDirty?: boolean;
 }
+
+// So sánh 2 danh sách vắng để biết dữ liệu có thực sự khác ban đầu hay không
+const serializeAbsences = (absences: AbsenceItem[]): string => {
+  return (absences || [])
+    .map((a) => `${a.date}|${a.status}|${(a.notes || '').trim()}`)
+    .sort()
+    .join(';;');
+};
+
+const areAbsencesEqual = (a: AbsenceItem[] = [], b: AbsenceItem[] = []): boolean => {
+  return serializeAbsences(a) === serializeAbsences(b);
+};
 
 // Lấy ngày hôm nay theo định dạng cố định DD/MM/YYYY
 const getLocalDateString = (): string => {
@@ -135,6 +148,7 @@ export const AttendanceView: React.FC = () => {
           code: student.code || student.id,
           absentCount: absences.length,
           absences,
+          initialAbsences: absences,
           isDirty: false,
         };
       });
@@ -209,13 +223,15 @@ export const AttendanceView: React.FC = () => {
         }
       }
 
+      const isDirty = !areAbsencesEqual(updatedAbsences, row.initialAbsences);
+
       return {
         ...prev,
         [studentId]: {
           ...row,
           absentCount: updatedAbsences.length,
           absences: updatedAbsences,
-          isDirty: true,
+          isDirty,
         },
       };
     });
@@ -307,13 +323,15 @@ export const AttendanceView: React.FC = () => {
         }
       }
 
+      const isDirty = !areAbsencesEqual(updatedAbsences, row.initialAbsences);
+
       return {
         ...prev,
         [studentId]: {
           ...row,
           absentCount: updatedAbsences.length,
           absences: updatedAbsences,
-          isDirty: true,
+          isDirty,
         },
       };
     });
@@ -391,10 +409,11 @@ export const AttendanceView: React.FC = () => {
           const updatedAbsences = row.absences.map((a) =>
             a.date === targetEditingDate ? { ...a, date: formattedNewDate } : a
           );
+          const isDirty = !areAbsencesEqual(updatedAbsences, row.initialAbsences);
           next[id] = {
             ...row,
             absences: updatedAbsences,
-            isDirty: true,
+            isDirty,
           };
         }
       });
@@ -430,11 +449,12 @@ export const AttendanceView: React.FC = () => {
         const hasAbsence = row.absences.some((a) => a.date === targetDeletingDate);
         if (hasAbsence) {
           const updatedAbsences = row.absences.filter((a) => a.date !== targetDeletingDate);
+          const isDirty = !areAbsencesEqual(updatedAbsences, row.initialAbsences);
           next[id] = {
             ...row,
             absentCount: updatedAbsences.length,
             absences: updatedAbsences,
-            isDirty: true,
+            isDirty,
           };
         }
       });
@@ -470,7 +490,11 @@ export const AttendanceView: React.FC = () => {
       setAttendanceData((prev) => {
         const next = { ...prev };
         Object.keys(next).forEach((id) => {
-          next[id] = { ...next[id], isDirty: false };
+          next[id] = {
+            ...next[id],
+            initialAbsences: next[id].absences,
+            isDirty: false,
+          };
         });
         return next;
       });
