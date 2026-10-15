@@ -651,12 +651,12 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
                   return (
                     <tr key={s.id} className="hover:bg-surface-container-low/50 transition-colors group">
                       {/* STT */}
-                      <td className="p-3 text-center sticky left-0 bg-surface group-hover:bg-surface-container-low/50 z-10 border-r border-outline-variant/40 font-semibold text-outline">
+                      <td className="p-3 text-center sticky left-0 bg-surface group-hover:bg-surface-container-low z-10 border-r border-outline-variant/40 font-semibold text-outline">
                         {index + 1}
                       </td>
 
                       {/* Tên Thánh & Họ Tên */}
-                      <td className="p-3 sticky left-[56px] bg-surface group-hover:bg-surface-container-low/50 z-10 border-r border-outline-variant/40">
+                      <td className="p-3 sticky left-[56px] bg-surface group-hover:bg-surface-container-low z-10 border-r border-outline-variant/40 shadow-[3px_0_6px_-4px_rgba(15,23,42,0.35)]">
                         <div className="font-bold text-primary">{s.holyName}</div>
                         <div className="text-xs text-on-surface font-medium">{s.fullName}</div>
                       </td>
