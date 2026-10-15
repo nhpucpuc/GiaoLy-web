@@ -83,7 +83,7 @@ export const PWAInstallPrompt: React.FC = () => {
     <>
       {/* Floating Mini Banner ở góc dưới */}
       {isOpen && !showGuideModal && (
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 animate-bounce-in">
+        <div className="safe-fixed-bottom fixed left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 animate-bounce-in">
           <div className="bg-slate-900/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-2xl border border-slate-700/60 flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shrink-0">
               <img src="/pwa-192x192.png" alt="Logo" className="w-9 h-9 object-contain rounded-lg" onError={(e) => {

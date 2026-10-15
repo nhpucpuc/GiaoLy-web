@@ -139,8 +139,8 @@ export const StudentTranscriptModal: React.FC<StudentTranscriptModalProps> = ({
               </span>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-outline-variant/30 shadow-2xs">
-              <table className="w-full text-left border-collapse text-xs">
+            <div className="data-table-scroll overflow-x-auto rounded-2xl border border-outline-variant/30 shadow-2xs">
+              <table className="w-full min-w-[680px] text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-surface-container-low border-b border-outline-variant/40 text-on-surface font-semibold">
                     <th className="p-2.5 text-center w-12">STT</th>
@@ -208,7 +208,7 @@ export const StudentTranscriptModal: React.FC<StudentTranscriptModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-surface-container-low border-t border-outline-variant/30 flex items-center justify-between shrink-0">
+        <div className="p-4 bg-surface-container-low border-t border-outline-variant/30 flex flex-col min-[420px]:flex-row min-[420px]:items-center justify-between gap-3 shrink-0">
           <div className="text-xs text-on-surface-variant">
             Xác nhận bởi: <strong>Ban Giáo Lý Giáo Xứ Sơn Lộc</strong>
           </div>

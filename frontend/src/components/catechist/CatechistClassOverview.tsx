@@ -162,7 +162,7 @@ export const CatechistClassOverview: React.FC = () => {
     <div className="space-y-5 pb-12 font-body">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-20 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-50 p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl flex items-center gap-2.5 text-xs font-bold shadow-xl animate-fadeIn">
+        <div className="safe-fixed-top fixed left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-50 p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl flex items-center gap-2.5 text-xs font-bold shadow-xl animate-fadeIn">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -217,7 +217,7 @@ export const CatechistClassOverview: React.FC = () => {
           </div>
 
           {/* Actions: Export Excel & Search Box */}
-          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap w-full sm:w-auto">
+          <div className="page-actions flex items-center gap-2.5 flex-wrap sm:flex-nowrap w-full sm:w-auto">
             <button
               onClick={() => exportClassRosterToExcel(currentClass, classStudents, getFullCatechistNames(currentClass, catechists))}
               className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer shrink-0"
@@ -241,8 +241,8 @@ export const CatechistClassOverview: React.FC = () => {
         </div>
 
         {/* BẢNG CUỘN 2 CHIỀU: DỌC & NGANG, CỘT STT & HỌ TÊN CỐ ĐỊNH HOÀN TOÀN BẰNG NỀN ĐẶC KHÔNG LỘ CHỮ */}
-        <div className="max-h-[580px] overflow-y-auto overflow-x-auto border border-outline-variant/30 rounded-xl bg-surface relative select-text shadow-2xs">
-          <table className="w-full text-left text-xs border-separate border-spacing-0 min-w-[1750px]">
+        <div className="data-table-scroll max-h-[580px] overflow-y-auto overflow-x-auto border border-outline-variant/30 rounded-xl bg-surface relative select-text shadow-2xs">
+          <table className="roster-table w-full text-left text-xs border-separate border-spacing-0 min-w-[1750px]">
             {/* Table Header (Sticky Top) */}
             <thead className="sticky top-0 z-30 bg-surface-container text-on-surface uppercase text-[11px] font-bold shadow-xs">
               <tr>
@@ -928,7 +928,7 @@ export const CatechistClassOverview: React.FC = () => {
                     <span>Thông Tin Người Cha</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block font-bold text-on-surface mb-1">Tên Thánh Cha</label>
                       <input
@@ -972,7 +972,7 @@ export const CatechistClassOverview: React.FC = () => {
                     <span>Thông Tin Người Mẹ</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block font-bold text-on-surface mb-1">Tên Thánh Mẹ</label>
                       <input

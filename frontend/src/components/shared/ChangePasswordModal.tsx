@@ -193,7 +193,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
           </div>
 
           {/* Modal Footer Actions */}
-          <div className="flex justify-end items-center gap-3 pt-4 border-t border-outline-variant/20">
+          <div className="modal-actions flex justify-end items-center gap-3 pt-4 border-t border-outline-variant/20">
             <button
               type="button"
               onClick={handleClose}

@@ -176,7 +176,7 @@ export const AddClassView: React.FC = () => {
             {/* Ca học / Buổi học (Sáng / Tối) */}
             <div>
               <label className="block font-semibold text-on-surface mb-1">Ca Học / Buổi Học (*)</label>
-              <div className="flex items-center gap-4 pt-1.5">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-1.5">
                 <label className="flex items-center gap-1.5 cursor-pointer font-bold text-amber-900 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 text-xs">
                   <input
                     type="radio"
@@ -244,10 +244,10 @@ export const AddClassView: React.FC = () => {
             </div>
 
             {/* Submit Button */}
-            <div className="sm:col-span-2 pt-4 flex justify-end">
+            <div className="sm:col-span-2 pt-4 flex justify-stretch sm:justify-end">
               <button
                 type="submit"
-                className="px-8 py-3 bg-primary hover:bg-primary-dark text-white font-bold text-xs rounded-full shadow-md shadow-primary/20 hover:scale-95 transition-all flex items-center gap-2"
+                className="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-primary-dark text-white font-bold text-xs rounded-full shadow-md shadow-primary/20 hover:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 <Save className="w-4 h-4" />
                 <span>Khởi tạo lớp học</span>

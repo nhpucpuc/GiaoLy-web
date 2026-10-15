@@ -559,7 +559,7 @@ export const AttendanceView: React.FC = () => {
       {/* Toast Notification */}
       {toastMessage && (
         <div
-          className={`fixed bottom-3 left-3 right-3 sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-md z-50 px-4 py-3 rounded-xl flex items-center gap-2.5 shadow-lg text-xs font-semibold border ${toastMessage.type === 'success'
+          className={`safe-fixed-bottom fixed left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-50 px-4 py-3 rounded-xl flex items-center gap-2.5 shadow-lg text-xs font-semibold border ${toastMessage.type === 'success'
               ? 'bg-surface-container-lowest text-emerald-800 border-emerald-300'
               : 'bg-surface-container-lowest text-rose-800 border-rose-300'
             }`}
@@ -577,7 +577,7 @@ export const AttendanceView: React.FC = () => {
       <section className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-5 sm:p-6 shadow-2xs">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-md bg-surface-container-low text-on-surface-variant font-medium text-xs border border-outline-variant/30 flex items-center gap-1.5">
                 <CalendarCheck className="w-3.5 h-3.5 text-primary" />
                 <span>
@@ -599,13 +599,13 @@ export const AttendanceView: React.FC = () => {
           </div>
 
           {/* Action Buttons & Switch Mode Button */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto shrink-0">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 w-full lg:w-auto shrink-0">
 
             {/* Nút Chuyển Đổi Chế Độ Điểm Danh */}
             {viewMode === 'TODAY' ? (
               <button
                 onClick={() => setViewMode('GENERAL')}
-                className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
+                className="col-span-2 sm:col-auto w-full sm:w-auto px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
                 title="Xem bảng điểm danh tổng quát tất cả các ngày"
               >
                 <Clock className="w-3.5 h-3.5 shrink-0" />
@@ -614,7 +614,7 @@ export const AttendanceView: React.FC = () => {
             ) : (
               <button
                 onClick={() => setViewMode('TODAY')}
-                className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
+                className="col-span-2 sm:col-auto w-full sm:w-auto px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
                 title="Quay lại điểm danh ngày hôm nay"
               >
                 <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
@@ -625,7 +625,7 @@ export const AttendanceView: React.FC = () => {
             <button
               onClick={fetchClassAttendance}
               disabled={isLoading}
-              className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl border border-outline-variant/40 bg-surface hover:bg-surface-container-low text-on-surface-variant text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
+              className="w-full sm:w-auto px-3.5 py-2 rounded-xl border border-outline-variant/40 bg-surface hover:bg-surface-container-low text-on-surface-variant text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
             >
               <RotateCcw className={`w-3.5 h-3.5 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
               <span>Tải lại</span>
@@ -634,7 +634,7 @@ export const AttendanceView: React.FC = () => {
             <button
               onClick={handleSaveAll}
               disabled={isSaving || isLoading}
-              className="flex-1 sm:flex-none px-4 sm:px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs whitespace-nowrap shrink-0"
+              className="w-full sm:w-auto px-4 sm:px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs whitespace-nowrap shrink-0"
             >
               <Save className={`w-4 h-4 shrink-0 ${isSaving ? 'animate-spin' : ''}`} />
               <span>{isSaving ? 'Đang lưu...' : hasUnsavedChanges ? 'Lưu điểm danh' : 'Lưu điểm danh'}</span>
@@ -903,7 +903,7 @@ export const AttendanceView: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto relative max-h-[75vh]">
+          <div className="data-table-scroll overflow-x-auto relative max-h-[75vh]">
             <table className="w-full text-left border-collapse text-xs">
               <thead className="sticky top-0 z-30 bg-surface-container-low border-b-2 border-outline-variant/50 text-on-surface font-semibold select-none">
                 <tr>
@@ -1119,7 +1119,7 @@ export const AttendanceView: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
+            <div className="modal-actions flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
               <button
                 type="button"
                 onClick={() => setIsAddDateModalOpen(false)}
@@ -1220,7 +1220,7 @@ export const AttendanceView: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
+            <div className="modal-actions flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
               <button
                 type="button"
                 onClick={() => setIsEditDateModalOpen(false)}
@@ -1279,7 +1279,7 @@ export const AttendanceView: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
+            <div className="modal-actions flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
               <button
                 type="button"
                 onClick={() => setIsDeleteDateModalOpen(false)}

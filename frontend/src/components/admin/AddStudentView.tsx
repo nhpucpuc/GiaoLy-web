@@ -619,7 +619,7 @@ export const AddStudentView: React.FC = () => {
                     <span>Thông tin Người Cha</span>
                   </div>
                   <div className="space-y-2">
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-2">
                       <div className="col-span-1">
                         <label className="block text-[11px] text-outline mb-0.5">Tên thánh:</label>
                         <input
@@ -630,7 +630,7 @@ export const AddStudentView: React.FC = () => {
                           className="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/40 text-xs"
                         />
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1 min-[420px]:col-span-2">
                         <label className="block text-[11px] text-outline mb-0.5">Họ và tên cha:</label>
                         <input
                           type="text"
@@ -661,7 +661,7 @@ export const AddStudentView: React.FC = () => {
                     <span>Thông tin Người Mẹ</span>
                   </div>
                   <div className="space-y-2">
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-2">
                       <div className="col-span-1">
                         <label className="block text-[11px] text-outline mb-0.5">Tên thánh:</label>
                         <input
@@ -672,7 +672,7 @@ export const AddStudentView: React.FC = () => {
                           className="w-full px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/40 text-xs"
                         />
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1 min-[420px]:col-span-2">
                         <label className="block text-[11px] text-outline mb-0.5">Họ và tên mẹ:</label>
                         <input
                           type="text"
@@ -749,7 +749,7 @@ export const AddStudentView: React.FC = () => {
             {/* ========================================================================= */}
             {/* BUTTON SUBMIT */}
             {/* ========================================================================= */}
-            <div className="flex justify-end items-center gap-3 pt-4 border-t border-outline-variant/20">
+            <div className="modal-actions flex justify-end items-center gap-3 pt-4 border-t border-outline-variant/20">
               <button
                 type="button"
                 onClick={() => navigate(currentRole === 'catechist' ? '/glyvien/tong-quan' : '/admin/dashboard')}

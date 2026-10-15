@@ -220,7 +220,7 @@ export const ClassDetailView: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+          <div className="page-actions page-actions-two-up flex items-center gap-2 w-full sm:w-auto shrink-0">
             <button
               onClick={() => exportClassRosterToExcel(currentClass, classStudents, getFullCatechistNames(currentClass, catechists))}
               className="flex-1 sm:flex-none bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer shrink-0"
@@ -294,8 +294,8 @@ export const ClassDetailView: React.FC = () => {
       {activeTab === 'PROFILE' && (
         <div className="flex-1 min-h-0 bg-surface rounded-2xl border border-outline-variant/30 shadow-xs flex flex-col overflow-hidden animate-fadeIn">
           {/* VÙNG BẢNG CUỘN TỰ DO NGANG VÀ DỌC TRONG KHUNG */}
-          <div className="flex-1 overflow-auto bg-surface relative select-text">
-            <table className="w-full text-left text-xs border-separate border-spacing-0 min-w-[1750px]">
+          <div className="data-table-scroll flex-1 overflow-auto bg-surface relative select-text">
+            <table className="roster-table w-full text-left text-xs border-separate border-spacing-0 min-w-[1750px]">
               {/* Table Header (Sticky Top) */}
               <thead className="sticky top-0 z-30 bg-surface-container text-on-surface uppercase text-[11px] font-bold shadow-xs">
                 <tr>
@@ -1007,7 +1007,7 @@ export const ClassDetailView: React.FC = () => {
                     <span>Thông Tin Người Cha</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block font-bold text-on-surface mb-1">Tên Thánh Cha</label>
                       <input
@@ -1051,7 +1051,7 @@ export const ClassDetailView: React.FC = () => {
                     <span>Thông Tin Người Mẹ</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block font-bold text-on-surface mb-1">Tên Thánh Mẹ</label>
                       <input

@@ -393,7 +393,7 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
           </p>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="page-actions page-actions-two-up flex items-center gap-3 w-full sm:w-auto">
           <button
             onClick={handleExport}
             className="flex-1 sm:flex-none px-6 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-2 border-emerald-600/70 rounded-full font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs hover:shadow hover:-translate-y-0.5"
@@ -552,7 +552,7 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
           }}
         ></div>
 
-        <div className="overflow-x-auto flex-1">
+        <div className="data-table-scroll overflow-x-auto flex-1">
           <table className="w-full text-left border-collapse min-w-[950px] text-xs">
             <thead>
               {/* Header Row 1 */}

@@ -84,7 +84,7 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="bg-surface text-on-surface font-body min-h-screen min-h-[100dvh] flex flex-col antialiased">
       {/* TopNavBar */}
-      <header className="bg-surface shadow-sm sticky top-0 z-40 border-b border-outline-variant/20">
+      <header className="public-toolbar bg-surface shadow-sm sticky top-0 z-40 border-b border-outline-variant/20">
         <div className="flex justify-between items-center w-full px-4 md:px-10 max-w-[1536px] mx-auto h-20">
           {/* Brand */}
           <div
@@ -245,12 +245,12 @@ export const LandingPage: React.FC = () => {
 
                   {/* Liên hệ bên trái & Phát triển & xây dựng bên phải (thay thế nút Gửi Góp Ý) */}
                   <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-outline-variant/20">
-                    <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-on-surface-variant min-w-0">
                       <Mail className="w-4 h-4 text-primary shrink-0" />
                       <span>Mọi ý kiến đóng góp &amp; hỗ trợ kỹ thuật:</span>
                       <a
                         href="mailto:nguyenphuc20050@gmail.com"
-                        className="text-primary font-bold hover:underline"
+                        className="text-primary font-bold hover:underline break-all"
                       >
                         nguyenphuc20050@gmail.com
                       </a>
@@ -357,9 +357,9 @@ export const LandingPage: React.FC = () => {
               <span className="font-bold text-xs uppercase tracking-wider text-[#45575c]">
                 Hỗ trợ &amp; Liên hệ
               </span>
-              <div className="flex items-center gap-2 text-xs text-[#45575c]/90">
+              <div className="flex items-center gap-2 text-xs text-[#45575c]/90 min-w-0">
                 <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span>nguyenphuc20050@gmail.com</span>
+                <span className="break-all">nguyenphuc20050@gmail.com</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-[#45575c]/90">
                 <School className="w-3.5 h-3.5 text-primary shrink-0" />

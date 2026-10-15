@@ -503,8 +503,8 @@ export const AdminStudentDetailView: React.FC = () => {
           </span>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-outline-variant/30">
-          <table className="w-full text-left border-collapse text-xs">
+        <div className="data-table-scroll overflow-x-auto rounded-xl border border-outline-variant/30">
+          <table className="w-full min-w-[680px] text-left border-collapse text-xs">
             <thead>
               <tr className="bg-surface-container-low border-b border-outline-variant/40 text-on-surface font-semibold">
                 <th className="p-3 text-center w-12">STT</th>

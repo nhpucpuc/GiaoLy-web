@@ -98,7 +98,7 @@ export const AcademicYearManager: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 relative z-10">
+        <div className="page-actions flex flex-wrap items-center gap-3 relative z-10">
           <button
             onClick={() => refreshData()}
             className="px-3.5 py-2.5 bg-surface-container-high hover:bg-surface-container text-on-surface text-xs font-bold rounded-xl border border-outline-variant/30 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
@@ -217,7 +217,7 @@ export const AcademicYearManager: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-outline-variant/20">
+          <div className="page-actions flex items-center justify-end gap-3 pt-4 border-t border-outline-variant/20">
             <button
               onClick={() => setShowConfirmModal(true)}
               disabled={isProcessing || !fromYear || !toYear}
@@ -341,7 +341,7 @@ export const AcademicYearManager: React.FC = () => {
               <div>• Số lượng học sinh xử lý: <strong>{students.length}</strong> em</div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="modal-actions flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setShowConfirmModal(false)}
                 className="px-4 py-2 bg-surface-container text-on-surface-variant hover:text-on-surface font-bold rounded-xl text-xs cursor-pointer"

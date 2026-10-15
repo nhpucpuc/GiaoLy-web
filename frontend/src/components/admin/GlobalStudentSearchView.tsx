@@ -151,7 +151,7 @@ export const GlobalStudentSearchView: React.FC = () => {
     <div className="space-y-6 pb-12 font-body max-w-[100vw] overflow-x-hidden">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-3 left-3 right-3 sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-md z-50 bg-surface-container-lowest text-on-surface px-5 py-3 rounded-2xl shadow-xl border border-emerald-500/30 flex items-center gap-2.5 text-xs font-semibold animate-fadeIn">
+        <div className="safe-fixed-bottom fixed left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-50 bg-surface-container-lowest text-on-surface px-5 py-3 rounded-2xl shadow-xl border border-emerald-500/30 flex items-center gap-2.5 text-xs font-semibold animate-fadeIn">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -178,7 +178,7 @@ export const GlobalStudentSearchView: React.FC = () => {
           </div>
 
           {/* Search bar & Export */}
-          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+          <div className="page-actions flex items-center gap-2.5 flex-wrap sm:flex-nowrap w-full md:w-auto">
             <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-72">
               <input
                 type="text"
@@ -220,8 +220,8 @@ export const GlobalStudentSearchView: React.FC = () => {
 
       {/* Main Table: Form Lý Lịch Học Sinh (Thêm Cột Lớp sau Cột Ngày Sinh) */}
       <section className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto relative max-h-[72vh]">
-          <table className="w-full text-left border-collapse text-xs">
+        <div className="data-table-scroll overflow-x-auto relative max-h-[72vh]">
+          <table className="roster-table w-full text-left border-collapse text-xs">
             <thead className="sticky top-0 z-30 bg-surface-container text-on-surface uppercase text-[11px] font-bold shadow-xs select-none">
               <tr>
                 {/* 1. STT */}
@@ -966,7 +966,7 @@ export const GlobalStudentSearchView: React.FC = () => {
                     <span>Thông Tin Người Cha</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block font-bold text-on-surface mb-1">Tên Thánh Cha</label>
                       <input
@@ -1010,7 +1010,7 @@ export const GlobalStudentSearchView: React.FC = () => {
                     <span>Thông Tin Người Mẹ</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block font-bold text-on-surface mb-1">Tên Thánh Mẹ</label>
                       <input
@@ -1067,7 +1067,7 @@ export const GlobalStudentSearchView: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-3 border-t border-outline-variant/30">
+              <div className="modal-actions flex items-center justify-between pt-3 border-t border-outline-variant/30">
                 <button
                   type="button"
                   onClick={handleDeleteStudent}

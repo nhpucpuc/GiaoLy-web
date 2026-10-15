@@ -211,7 +211,7 @@ export const DeletedStudentsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 relative z-10">
+        <div className="page-actions flex flex-wrap items-center gap-3 relative z-10">
           <button
             onClick={fetchDeletedStudents}
             disabled={isLoading}
@@ -298,8 +298,8 @@ export const DeletedStudentsView: React.FC = () => {
         </div>
       ) : (
         <div className="bg-surface-container-low rounded-3xl border border-outline-variant/30 overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+          <div className="data-table-scroll overflow-x-auto">
+            <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="bg-surface-container/60 border-b border-outline-variant/30 text-xs font-bold uppercase tracking-wider text-on-surface-variant">
                 <tr>
                   <th className="py-4 px-4 sm:px-6">Học sinh & Mã số</th>
@@ -526,8 +526,8 @@ export const DeletedStudentsView: React.FC = () => {
               </h4>
 
               {selectedStudentDetail.grades && selectedStudentDetail.grades.length > 0 ? (
-                <div className="overflow-x-auto rounded-2xl border border-outline-variant/30">
-                  <table className="w-full text-xs text-center">
+                <div className="data-table-scroll overflow-x-auto rounded-2xl border border-outline-variant/30">
+                  <table className="w-full min-w-[560px] text-xs text-center">
                     <thead className="bg-surface-container font-bold text-on-surface-variant uppercase">
                       <tr>
                         <th className="py-2.5 px-3">Niên khóa</th>
@@ -563,7 +563,7 @@ export const DeletedStudentsView: React.FC = () => {
               )}
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-outline-variant/30 space-x-3">
+            <div className="modal-actions flex justify-end gap-3 pt-4 border-t border-outline-variant/30">
               <button
                 onClick={() => setSelectedStudentDetail(null)}
                 className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors cursor-pointer"

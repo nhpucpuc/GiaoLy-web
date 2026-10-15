@@ -319,7 +319,7 @@ export const CatechistListView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 relative z-10">
+        <div className="page-actions flex flex-wrap items-center gap-3 relative z-10">
           {/* NÚT XUẤT EXCEL */}
           <button
             onClick={handleExportExcel}
@@ -461,8 +461,8 @@ export const CatechistListView: React.FC = () => {
 
       {/* Table of Catechists */}
       <div className="bg-surface rounded-2xl border border-outline-variant/30 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+        <div className="data-table-scroll overflow-x-auto">
+          <table className="w-full min-w-[960px] text-left border-collapse text-xs">
             <thead>
               <tr className="bg-surface-container-low border-b-2 border-outline-variant/50 text-on-surface font-bold uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4 text-center w-12 border-r border-outline-variant/40">STT</th>
@@ -714,7 +714,7 @@ export const CatechistListView: React.FC = () => {
 
             {/* Modal Body / Form */}
             <form onSubmit={handleCreateCatechist} className="p-6 space-y-4 text-xs">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3">
                 <div className="col-span-1">
                   <label className="block font-bold text-on-surface mb-1">Tên Thánh (*)</label>
                   <input
@@ -726,7 +726,7 @@ export const CatechistListView: React.FC = () => {
                     className="w-full px-3 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 focus:outline-none focus:border-primary font-semibold text-xs"
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 min-[420px]:col-span-2">
                   <label className="block font-bold text-on-surface mb-1">Họ và Tên (*)</label>
                   <input
                     type="text"
@@ -803,7 +803,7 @@ export const CatechistListView: React.FC = () => {
               </div>
 
               {/* Modal Footer Actions */}
-              <div className="flex justify-end items-center gap-3 pt-4 border-t border-outline-variant/20">
+              <div className="modal-actions flex justify-end items-center gap-3 pt-4 border-t border-outline-variant/20">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
@@ -851,7 +851,7 @@ export const CatechistListView: React.FC = () => {
 
             {/* Modal Body / Form */}
             <form onSubmit={handleUpdateCatechistSubmit} className="p-6 space-y-4 text-xs">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3">
                 <div className="col-span-1">
                   <label className="block font-bold text-on-surface mb-1">Tên Thánh (*)</label>
                   <input
@@ -863,7 +863,7 @@ export const CatechistListView: React.FC = () => {
                     className="w-full px-3 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 focus:outline-none focus:border-primary font-semibold text-xs"
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 min-[420px]:col-span-2">
                   <label className="block font-bold text-on-surface mb-1">Họ và Tên (*)</label>
                   <input
                     type="text"
@@ -940,7 +940,7 @@ export const CatechistListView: React.FC = () => {
               </div>
 
               {/* Modal Footer Actions */}
-              <div className="flex justify-end items-center gap-3 pt-4 border-t border-outline-variant/20">
+              <div className="modal-actions flex justify-end items-center gap-3 pt-4 border-t border-outline-variant/20">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}

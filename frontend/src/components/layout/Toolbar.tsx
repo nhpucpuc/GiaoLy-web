@@ -85,14 +85,14 @@ export const Toolbar: React.FC = () => {
   };
 
   return (
-    <header className="min-h-16 bg-surface-container-lowest border-b border-outline-variant/30 px-2.5 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-20 transition-all">
+    <header className="portal-toolbar min-h-16 bg-surface-container-lowest border-b border-outline-variant/30 px-2.5 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-20 transition-all">
       {/* Left: Sidebar Toggle & Title & Quick class selector if needed */}
       <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
         {/* Nút Ẩn / Hiện Thanh Menu Sidebar */}
         <button
           onClick={toggleSidebar}
           title={isSidebarCollapsed ? "Hiện thanh menu điều hướng" : "Ẩn thanh menu điều hướng"}
-          className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+          className={`toolbar-control p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
             isSidebarCollapsed
               ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20 shadow-xs'
               : 'border-outline-variant/40 text-on-surface-variant hover:text-primary hover:bg-surface-container hover:border-outline-variant'
@@ -107,7 +107,7 @@ export const Toolbar: React.FC = () => {
         </button>
 
         <div className="min-w-0">
-          <h2 className="text-sm sm:text-base font-bold text-on-surface leading-tight font-sans truncate">
+          <h2 className="text-sm sm:text-base font-bold text-on-surface leading-tight font-sans line-clamp-2 sm:line-clamp-1 break-words">
             {getPageTitle()}
           </h2>
           <div className="hidden sm:flex items-center space-x-2 text-xs text-on-surface-variant">
@@ -217,7 +217,7 @@ export const Toolbar: React.FC = () => {
             onClick={() => navigate('/admin/tim-kiem')}
             title="Tìm kiếm học sinh"
             aria-label="Tìm kiếm học sinh"
-            className="md:hidden p-2 rounded-xl hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+            className="toolbar-control md:hidden p-2 rounded-xl hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
           >
             <Search className="w-4 h-4" />
           </button>
@@ -226,14 +226,14 @@ export const Toolbar: React.FC = () => {
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 rounded-xl hover:bg-surface-container text-on-surface-variant relative transition-colors cursor-pointer"
+            className="toolbar-control p-2 rounded-xl hover:bg-surface-container text-on-surface-variant relative transition-colors cursor-pointer"
           >
             <Bell className="w-4 h-4" />
             <span className="w-2 h-2 bg-customError rounded-full absolute top-1.5 right-1.5"></span>
           </button>
 
           {showNotifications && (
-            <div className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/30 p-4 z-50 animate-fadeIn">
+            <div className="notification-panel fixed left-3 right-3 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/30 p-4 z-50 animate-fadeIn">
               <div className="flex items-center justify-between pb-3 border-b border-outline-variant/20">
                 <span className="font-bold text-xs text-on-surface">Thông báo mới</span>
                 <span className="text-[10px] text-primary font-medium">{announcements.length} tin tức</span>
@@ -276,7 +276,7 @@ export const Toolbar: React.FC = () => {
           <button
             onClick={handleLogout}
             title="Đăng xuất về trang chủ"
-            className="p-2 rounded-xl hover:bg-customError-container/40 text-on-surface-variant hover:text-customError transition-colors cursor-pointer"
+            className="toolbar-control p-2 rounded-xl hover:bg-customError-container/40 text-on-surface-variant hover:text-customError transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>

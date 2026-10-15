@@ -60,7 +60,7 @@ export const Sidebar: React.FC = () => {
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 md:relative md:inset-auto z-30 w-64 bg-surface-container-low border-r border-outline-variant/30 flex flex-col h-full shrink-0 select-none transition-all duration-300 ease-in-out shadow-2xl md:shadow-none ${
+        className={`portal-sidebar fixed inset-y-0 left-0 md:relative md:inset-auto z-30 w-64 bg-surface-container-low border-r border-outline-variant/30 flex flex-col h-full shrink-0 select-none transition-all duration-300 ease-in-out shadow-2xl md:shadow-none ${
           isSidebarCollapsed
             ? '-translate-x-full md:w-0 overflow-hidden border-r-0 opacity-0 pointer-events-none'
             : 'translate-x-0 opacity-100'
