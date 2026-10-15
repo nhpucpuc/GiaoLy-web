@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   GraduationCap,
@@ -19,8 +19,15 @@ import { ChangePasswordModal } from '../shared/ChangePasswordModal';
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
-  const { currentRole, switchRole, isSidebarCollapsed } = useApp();
+  const location = useLocation();
+  const { currentRole, switchRole, isSidebarCollapsed, setIsSidebarCollapsed } = useApp();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      setIsSidebarCollapsed(true);
+    }
+  }, [location.pathname, setIsSidebarCollapsed]);
 
   const getRoleLabel = () => {
     switch (currentRole) {
@@ -44,11 +51,19 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
+      {!isSidebarCollapsed && (
+        <button
+          type="button"
+          aria-label="Đóng menu điều hướng"
+          onClick={() => setIsSidebarCollapsed(true)}
+          className="fixed inset-0 z-20 bg-black/40 backdrop-blur-[1px] md:hidden"
+        />
+      )}
       <aside
-        className={`bg-surface-container-low border-r border-outline-variant/30 flex flex-col h-full shrink-0 select-none transition-all duration-300 ease-in-out relative z-30 ${
+        className={`fixed inset-y-0 left-0 md:relative md:inset-auto z-30 w-64 bg-surface-container-low border-r border-outline-variant/30 flex flex-col h-full shrink-0 select-none transition-all duration-300 ease-in-out shadow-2xl md:shadow-none ${
           isSidebarCollapsed
-            ? 'w-0 -translate-x-full overflow-hidden border-r-0 opacity-0 pointer-events-none'
-            : 'w-64 translate-x-0 opacity-100'
+            ? '-translate-x-full md:w-0 overflow-hidden border-r-0 opacity-0 pointer-events-none'
+            : 'translate-x-0 opacity-100'
         }`}
       >
         <div className="w-64 flex flex-col h-full">

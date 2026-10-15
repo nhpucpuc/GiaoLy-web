@@ -24,7 +24,7 @@ import { useApp } from './context/AppContext';
 // Layout chung cho các portal sau khi đăng nhập (chỉ có Sidebar và Toolbar)
 function PortalLayout() {
   return (
-    <div className="flex h-screen bg-surface overflow-hidden">
+    <div className="flex h-screen h-[100dvh] bg-surface overflow-hidden">
       {/* 1. Sidebar quản lý routing */}
       <Sidebar />
 
@@ -34,8 +34,8 @@ function PortalLayout() {
         <Toolbar />
 
         {/* 2.2 Canvas / Content Area (Rendered via React Router Outlet) */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-surface">
-          <div className="max-w-7xl mx-auto">
+        <main className="responsive-page flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 lg:p-8 bg-surface">
+          <div className="w-full min-w-0 max-w-7xl mx-auto">
             <Outlet />
           </div>
         </main>

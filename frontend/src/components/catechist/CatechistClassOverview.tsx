@@ -162,7 +162,7 @@ export const CatechistClassOverview: React.FC = () => {
     <div className="space-y-5 pb-12 font-body">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl flex items-center gap-2.5 text-xs font-bold shadow-xl animate-fadeIn">
+        <div className="fixed top-20 left-3 right-3 sm:left-auto sm:right-6 sm:max-w-md z-50 p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl flex items-center gap-2.5 text-xs font-bold shadow-xl animate-fadeIn">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -217,17 +217,17 @@ export const CatechistClassOverview: React.FC = () => {
           </div>
 
           {/* Actions: Export Excel & Search Box */}
-          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap w-full sm:w-auto">
             <button
               onClick={() => exportClassRosterToExcel(currentClass, classStudents, getFullCatechistNames(currentClass, catechists))}
-              className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0"
+              className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer shrink-0"
               title="Xuất toàn bộ sơ yếu lý lịch học sinh lớp ra file Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span>Xuất Excel</span>
             </button>
 
-            <div className="relative min-w-[240px]">
+            <div className="relative w-full sm:min-w-[240px]">
               <Search className="w-3.5 h-3.5 text-outline absolute left-3 top-2.5" />
               <input
                 type="text"

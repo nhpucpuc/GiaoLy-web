@@ -85,14 +85,14 @@ export const Toolbar: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-surface-container-lowest border-b border-outline-variant/30 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 transition-all">
+    <header className="min-h-16 bg-surface-container-lowest border-b border-outline-variant/30 px-2.5 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-20 transition-all">
       {/* Left: Sidebar Toggle & Title & Quick class selector if needed */}
-      <div className="flex items-center space-x-3 sm:space-x-4">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
         {/* Nút Ẩn / Hiện Thanh Menu Sidebar */}
         <button
           onClick={toggleSidebar}
           title={isSidebarCollapsed ? "Hiện thanh menu điều hướng" : "Ẩn thanh menu điều hướng"}
-          className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+          className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
             isSidebarCollapsed
               ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20 shadow-xs'
               : 'border-outline-variant/40 text-on-surface-variant hover:text-primary hover:bg-surface-container hover:border-outline-variant'
@@ -106,11 +106,11 @@ export const Toolbar: React.FC = () => {
           )}
         </button>
 
-        <div>
-          <h2 className="text-base font-bold text-on-surface leading-tight font-sans">
+        <div className="min-w-0">
+          <h2 className="text-sm sm:text-base font-bold text-on-surface leading-tight font-sans truncate">
             {getPageTitle()}
           </h2>
-          <div className="flex items-center space-x-2 text-xs text-on-surface-variant">
+          <div className="hidden sm:flex items-center space-x-2 text-xs text-on-surface-variant">
             {/* Academic Year Selector (Dropdown cho Admin, Nhãn cố định cho Giáo Lý Viên / Phụ Huynh) */}
             {currentRole === 'admin' ? (
               <div className="flex items-center gap-1 bg-primary/10 border border-primary/25 px-2 py-0.5 rounded-lg text-primary font-bold shadow-2xs">
@@ -210,7 +210,18 @@ export const Toolbar: React.FC = () => {
       )}
 
       {/* Right: Notifications + Profile & Logout */}
-      <div className="flex items-center space-x-3 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+        {currentRole === 'admin' && (
+          <button
+            type="button"
+            onClick={() => navigate('/admin/tim-kiem')}
+            title="Tìm kiếm học sinh"
+            aria-label="Tìm kiếm học sinh"
+            className="md:hidden p-2 rounded-xl hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+        )}
         {/* Notifications */}
         <div className="relative">
           <button
@@ -222,7 +233,7 @@ export const Toolbar: React.FC = () => {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/30 p-4 z-50 animate-fadeIn">
+            <div className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/30 p-4 z-50 animate-fadeIn">
               <div className="flex items-center justify-between pb-3 border-b border-outline-variant/20">
                 <span className="font-bold text-xs text-on-surface">Thông báo mới</span>
                 <span className="text-[10px] text-primary font-medium">{announcements.length} tin tức</span>
@@ -248,7 +259,7 @@ export const Toolbar: React.FC = () => {
 
         {/* User Profile & Logout */}
         <div className="flex items-center pl-2 border-l border-outline-variant/30 space-x-3">
-          <div className="flex items-center space-x-2">
+          <div className="hidden sm:flex items-center space-x-2">
             <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
               <User className="w-4 h-4" />
             </div>

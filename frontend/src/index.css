@@ -3,9 +3,23 @@
 @tailwind utilities;
 
 @layer base {
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-height: 100%;
+  }
+
+  html {
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-surface text-on-surface;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
   }
 
   /* Tăng độ đậm và rõ nét cho các đường phân cách bảng biểu và thẻ khối */
@@ -22,6 +36,54 @@ tbody.divide-y > tr + tr {
 
 table th, table td {
   border-color: rgba(148, 163, 184, 0.35);
+}
+
+/* Responsive behavior shared by all authenticated views. */
+.responsive-page {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  overscroll-behavior-y: contain;
+}
+
+.overflow-x-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+@media (max-width: 639px) {
+  .responsive-page .p-12 {
+    padding: 1.5rem;
+  }
+
+  .responsive-page .p-8,
+  .responsive-page .p-6 {
+    padding: 1.25rem;
+  }
+
+  .responsive-page .p-5 {
+    padding: 1rem;
+  }
+
+  .responsive-page .px-6 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .responsive-page .text-3xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .responsive-page input,
+  .responsive-page select,
+  .responsive-page textarea {
+    max-width: 100%;
+  }
+
+  .fixed.inset-0 > [class*="max-w-"] {
+    max-height: calc(100dvh - 1rem);
+    overflow-y: auto;
+  }
 }
 
 /* Custom scrollbar */

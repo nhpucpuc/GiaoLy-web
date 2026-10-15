@@ -188,7 +188,7 @@ export const ClassDetailView: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-95px)] space-y-3 font-body overflow-hidden">
+    <div className="flex flex-col min-h-[calc(100dvh-88px)] md:h-[calc(100dvh-95px)] space-y-3 font-body md:overflow-hidden">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="p-2.5 bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-xl flex items-center gap-2 text-xs font-bold shadow-md animate-fadeIn shrink-0">
@@ -200,7 +200,7 @@ export const ClassDetailView: React.FC = () => {
       {/* COMPACT INTEGRATED HEADER CARD */}
       <section className="bg-surface rounded-2xl border border-outline-variant/30 px-5 py-3 shadow-xs shrink-0 flex flex-col gap-2.5">
         {/* Row 1: Thông tin Lớp & 2 Nút Thao Tác Cố Định 100% */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex-1 min-w-0 space-y-1">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-lg sm:text-xl font-black text-primary font-sans flex items-center gap-2 shrink-0">
@@ -220,10 +220,10 @@ export const ClassDetailView: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <button
               onClick={() => exportClassRosterToExcel(currentClass, classStudents, getFullCatechistNames(currentClass, catechists))}
-              className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0"
+              className="flex-1 sm:flex-none bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer shrink-0"
               title="Xuất toàn bộ sơ yếu lý lịch học sinh lớp ra file Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -232,7 +232,7 @@ export const ClassDetailView: React.FC = () => {
 
             <button
               onClick={() => navigate('/admin/add-student')}
-              className="bg-primary text-white hover:bg-primary/90 font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0"
+              className="flex-1 sm:flex-none bg-primary text-white hover:bg-primary/90 font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer shrink-0"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>Thêm Thiếu Nhi</span>
@@ -243,7 +243,7 @@ export const ClassDetailView: React.FC = () => {
         {/* Row 2: Sub-tabs Switcher + Tìm kiếm nhanh */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-outline-variant/20">
           {/* Sub-Tabs Switcher */}
-          <div className="flex items-center p-1 bg-surface-container-low rounded-xl border border-outline-variant/30 gap-1 shadow-2xs w-fit">
+          <div className="flex items-center p-1 bg-surface-container-low rounded-xl border border-outline-variant/30 gap-1 shadow-2xs w-full sm:w-fit overflow-x-auto">
             <button
               onClick={() => setActiveTab('PROFILE')}
               className={`px-4 py-1.5 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -271,11 +271,11 @@ export const ClassDetailView: React.FC = () => {
 
           {/* Tìm kiếm nhanh (khi ở Tab Lý Lịch) */}
           {activeTab === 'PROFILE' && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <span className="text-[11px] text-outline hidden md:inline">
                 (Bấm ✏️ ở ô nào để sửa đúng ô đó)
               </span>
-              <div className="relative min-w-[240px]">
+              <div className="relative w-full sm:min-w-[240px]">
                 <Search className="w-3.5 h-3.5 text-outline absolute left-3 top-2" />
                 <input
                   type="text"

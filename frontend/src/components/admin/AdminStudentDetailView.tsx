@@ -192,10 +192,10 @@ export const AdminStudentDetailView: React.FC = () => {
       )}
 
       {/* Back button & Action Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button
           onClick={() => navigate('/admin/class-detail')}
-          className="inline-flex items-center space-x-1.5 text-xs font-bold text-primary hover:underline bg-surface-container-high px-3.5 py-2 rounded-xl border border-outline-variant/30 transition-all hover:bg-surface-container-highest cursor-pointer shadow-xs"
+          className="inline-flex items-center justify-center space-x-1.5 text-xs font-bold text-primary hover:underline bg-surface-container-high px-3.5 py-2 rounded-xl border border-outline-variant/30 transition-all hover:bg-surface-container-highest cursor-pointer shadow-xs"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại danh sách lớp {currentClass?.name}</span>
@@ -203,7 +203,7 @@ export const AdminStudentDetailView: React.FC = () => {
 
         <button
           onClick={handleOpenEditModal}
-          className="px-4 py-2 bg-primary text-white hover:bg-primary-dark font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+          className="px-4 py-2 bg-primary text-white hover:bg-primary-dark font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <UserCog className="w-4 h-4" />
           <span>Chỉnh sửa hồ sơ em này</span>

@@ -559,7 +559,7 @@ export const AttendanceView: React.FC = () => {
       {/* Toast Notification */}
       {toastMessage && (
         <div
-          className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl flex items-center gap-2.5 shadow-lg text-xs font-semibold border ${toastMessage.type === 'success'
+          className={`fixed bottom-3 left-3 right-3 sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-md z-50 px-4 py-3 rounded-xl flex items-center gap-2.5 shadow-lg text-xs font-semibold border ${toastMessage.type === 'success'
               ? 'bg-surface-container-lowest text-emerald-800 border-emerald-300'
               : 'bg-surface-container-lowest text-rose-800 border-rose-300'
             }`}
@@ -599,13 +599,13 @@ export const AttendanceView: React.FC = () => {
           </div>
 
           {/* Action Buttons & Switch Mode Button */}
-          <div className="flex items-center gap-2.5 flex-nowrap shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto shrink-0">
 
             {/* Nút Chuyển Đổi Chế Độ Điểm Danh */}
             {viewMode === 'TODAY' ? (
               <button
                 onClick={() => setViewMode('GENERAL')}
-                className="px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
+                className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
                 title="Xem bảng điểm danh tổng quát tất cả các ngày"
               >
                 <Clock className="w-3.5 h-3.5 shrink-0" />
@@ -614,7 +614,7 @@ export const AttendanceView: React.FC = () => {
             ) : (
               <button
                 onClick={() => setViewMode('TODAY')}
-                className="px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
+                className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
                 title="Quay lại điểm danh ngày hôm nay"
               >
                 <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
@@ -625,7 +625,7 @@ export const AttendanceView: React.FC = () => {
             <button
               onClick={fetchClassAttendance}
               disabled={isLoading}
-              className="px-3.5 py-2 rounded-xl border border-outline-variant/40 bg-surface hover:bg-surface-container-low text-on-surface-variant text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
+              className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl border border-outline-variant/40 bg-surface hover:bg-surface-container-low text-on-surface-variant text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
             >
               <RotateCcw className={`w-3.5 h-3.5 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
               <span>Tải lại</span>
@@ -634,7 +634,7 @@ export const AttendanceView: React.FC = () => {
             <button
               onClick={handleSaveAll}
               disabled={isSaving || isLoading}
-              className="px-4 sm:px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs whitespace-nowrap shrink-0"
+              className="flex-1 sm:flex-none px-4 sm:px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs whitespace-nowrap shrink-0"
             >
               <Save className={`w-4 h-4 shrink-0 ${isSaving ? 'animate-spin' : ''}`} />
               <span>{isSaving ? 'Đang lưu...' : hasUnsavedChanges ? 'Lưu điểm danh' : 'Lưu điểm danh'}</span>
@@ -913,7 +913,7 @@ export const AttendanceView: React.FC = () => {
                   </th>
 
                   {/* Cột 2 cố định khung: Tên thánh & Họ và Tên */}
-                  <th className="p-3 w-[240px] sm:w-[260px] min-w-[240px] sm:min-w-[260px] max-w-[240px] sm:max-w-[260px] sticky left-12 top-0 bg-surface-container-low z-40 border-r border-outline-variant/40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                  <th className="p-3 w-[160px] sm:w-[260px] min-w-[160px] sm:min-w-[260px] max-w-[160px] sm:max-w-[260px] sticky left-12 top-0 bg-surface-container-low z-40 border-r border-outline-variant/40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
                     TÊN THÁNH &amp; HỌ VÀ TÊN
                   </th>
 
@@ -956,7 +956,7 @@ export const AttendanceView: React.FC = () => {
                   <th className="p-0 border-none bg-surface-container-low min-w-0"></th>
 
                   {/* Cột 3 cố định bên phải: Tổng Vắng */}
-                  <th className="p-3 text-center w-24 sm:w-28 min-w-[96px] max-w-[110px] sticky right-0 top-0 bg-surface-container-low z-40 border-l border-outline-variant/40 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">
+                  <th className="p-3 text-center w-20 sm:w-28 min-w-[80px] sm:min-w-[96px] max-w-[88px] sm:max-w-[110px] sticky right-0 top-0 bg-surface-container-low z-40 border-l border-outline-variant/40 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">
                     TỔNG VẮNG
                   </th>
                 </tr>
@@ -1000,7 +1000,7 @@ export const AttendanceView: React.FC = () => {
 
                         {/* 2. Tên Thánh & Họ Và Tên (cố định khung 240px - 260px) */}
                         <td
-                          className={`p-3 sticky left-12 z-20 border-r border-outline-variant/40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] w-[240px] sm:w-[260px] min-w-[240px] sm:min-w-[260px] max-w-[240px] sm:max-w-[260px] ${stickyBg}`}
+                          className={`p-3 sticky left-12 z-20 border-r border-outline-variant/40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] w-[160px] sm:w-[260px] min-w-[160px] sm:min-w-[260px] max-w-[160px] sm:max-w-[260px] ${stickyBg}`}
                         >
                           <div className="truncate">
                             <div className="font-semibold text-on-surface text-xs leading-snug truncate">
@@ -1050,7 +1050,7 @@ export const AttendanceView: React.FC = () => {
 
                         {/* 4. Cột Tổng số ngày nghỉ (cố định bên phải) */}
                         <td
-                          className={`p-2.5 text-center sticky right-0 z-20 border-l border-outline-variant/40 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)] align-middle w-24 sm:w-28 min-w-[96px] max-w-[110px] ${stickyBg}`}
+                          className={`p-2.5 text-center sticky right-0 z-20 border-l border-outline-variant/40 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.06)] align-middle w-20 sm:w-28 min-w-[80px] sm:min-w-[96px] max-w-[88px] sm:max-w-[110px] ${stickyBg}`}
                         >
                           <span
                             className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-lg text-xs font-bold border ${

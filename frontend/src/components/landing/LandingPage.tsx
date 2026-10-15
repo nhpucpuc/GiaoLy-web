@@ -82,7 +82,7 @@ export const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-surface text-on-surface font-body min-h-screen flex flex-col antialiased">
+    <div className="bg-surface text-on-surface font-body min-h-screen min-h-[100dvh] flex flex-col antialiased">
       {/* TopNavBar */}
       <header className="bg-surface shadow-sm sticky top-0 z-40 border-b border-outline-variant/20">
         <div className="flex justify-between items-center w-full px-4 md:px-10 max-w-[1536px] mx-auto h-20">
