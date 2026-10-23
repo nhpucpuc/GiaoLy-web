@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateClassDto } from './dto/create-class.dto';
 
@@ -177,6 +177,28 @@ export class ClassesService {
     }
 
     // 2. Tạo hoặc lấy danh sách các lớp cho niên khóa đích
+    const sourceClassNames = new Set(sourceClasses.map((classRoom) => classRoom.name));
+    if (sourceClassNames.size !== sourceClasses.length) {
+      throw new BadRequestException(`Niên khóa ${fromYear} có lớp trùng tên, không thể sao chép chính xác sang niên khóa mới.`);
+    }
+
+    const existingTargetClasses = await this.prisma.classRoom.findMany({
+      where: { academicYear: toYear },
+      select: { id: true, name: true },
+    });
+    const unexpectedTargetClasses = existingTargetClasses.filter(
+      (classRoom) => !sourceClassNames.has(classRoom.name),
+    );
+    const duplicateTargetNames = existingTargetClasses.filter(
+      (classRoom, index, all) => all.findIndex((item) => item.name === classRoom.name) !== index,
+    );
+
+    if (unexpectedTargetClasses.length > 0 || duplicateTargetNames.length > 0) {
+      throw new BadRequestException(
+        `Niên khóa ${toYear} đã có cấu trúc lớp không khớp với ${fromYear}. Hệ thống dừng để tránh tạo sai số lượng lớp.`,
+      );
+    }
+
     const targetClassesMap = new Map<string, any>();
     let createdClassCount = 0;
 
@@ -205,6 +227,58 @@ export class ClassesService {
     }
 
     // 3. Phân bổ học sinh lên lớp mới
+    if (targetClassesMap.size !== sourceClasses.length) {
+      throw new BadRequestException(
+        `Không thể sao chép đủ ${sourceClasses.length} lớp sang niên khóa ${toYear}.`,
+      );
+    }
+
+    for (const sourceClass of sourceClasses) {
+      const { nextName, isGraduated } = this.getNextClassName(sourceClass.name);
+      if (!isGraduated && !nextName) {
+        throw new BadRequestException(
+          `Lớp "${sourceClass.name}" chưa có quy tắc chuyển lớp cho niên khóa mới.`,
+        );
+      }
+      if (nextName && !targetClassesMap.has(nextName)) {
+        throw new BadRequestException(
+          `Thiếu lớp đích "${nextName}" để chuyển học sinh từ lớp "${sourceClass.name}".`,
+        );
+      }
+    }
+
+    // Giáo lý viên giữ nguyên tên lớp phụ trách, nhưng chuyển sang ID lớp của niên khóa mới.
+    const sourceClassById = new Map<string, (typeof sourceClasses)[number]>(
+      sourceClasses.map((classRoom) => [classRoom.id, classRoom]),
+    );
+    const catechistAssignments = await this.prisma.user.findMany({
+      where: {
+        role: 'CATECHIST',
+        assignedClassId: { in: sourceClasses.map((classRoom) => classRoom.id) },
+      },
+      select: { id: true, assignedClassId: true },
+    });
+    let reassignedCatechistCount = 0;
+
+    for (const catechist of catechistAssignments) {
+      const sourceClass = catechist.assignedClassId
+        ? sourceClassById.get(catechist.assignedClassId)
+        : undefined;
+      const targetClass = sourceClass ? targetClassesMap.get(sourceClass.name) : undefined;
+
+      if (!targetClass) {
+        throw new BadRequestException(
+          `Không tìm thấy lớp mới tương ứng để chuyển phân công cho giáo lý viên ${catechist.id}.`,
+        );
+      }
+
+      await this.prisma.user.update({
+        where: { id: catechist.id },
+        data: { assignedClassId: targetClass.id },
+      });
+      reassignedCatechistCount++;
+    }
+
     let promotedCount = 0;
     let graduatedCount = 0;
     let retainedCount = 0;
@@ -214,7 +288,7 @@ export class ClassesService {
     for (const srcCls of sourceClasses) {
       for (const student of srcCls.students) {
         const studentGrade = student.grades[0];
-        const isPassed = studentGrade?.result !== 'Chưa đạt'; // Mặc định nếu chưa có kết quả hoặc lên lớp
+        const isPassed = studentGrade?.result === 'Lên lớp';
 
         if (!isPassed) {
           // Chưa đạt: Giữ lại lớp cũ ở năm học mới
@@ -296,6 +370,8 @@ export class ClassesService {
       promotedCount,
       graduatedCount,
       retainedCount,
+      reassignedCatechistCount,
+      totalClasses: targetClassesMap.size,
     };
   }
 

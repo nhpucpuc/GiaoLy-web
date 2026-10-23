@@ -69,6 +69,7 @@ export const AttendanceView: React.FC = () => {
     students,
     classes,
     selectedClassId,
+    selectedAcademicYear,
     setSelectedClassId,
     currentRole,
     currentUser
@@ -99,8 +100,13 @@ export const AttendanceView: React.FC = () => {
   const [targetDeletingDate, setTargetDeletingDate] = useState<string>('');
 
   // Xác định lớp phụ trách
-  const activeClassId = currentRole === 'catechist' && currentUser?.assignedClassId
-    ? currentUser.assignedClassId
+  const assignedLatestClass = currentRole === 'catechist'
+    ? classes.find(
+        (c) => c.id === currentUser?.assignedClassId && c.academicYear === selectedAcademicYear
+      )
+    : undefined;
+  const activeClassId = currentRole === 'catechist'
+    ? (assignedLatestClass?.id ?? '')
     : selectedClassId || (classes[0]?.id ?? '');
 
   const activeClass = classes.find((c) => c.id === activeClassId);
@@ -553,6 +559,15 @@ export const AttendanceView: React.FC = () => {
   }, [attendanceData, todayDateStr]);
 
   const hasUnsavedChanges = Object.values(attendanceData).some((r) => r.isDirty);
+
+  if (currentRole === 'catechist' && !activeClass) {
+    return (
+      <div className="p-12 text-center bg-surface rounded-2xl border border-outline-variant/30 text-on-surface-variant font-body">
+        <h3 className="text-lg font-bold text-on-surface mb-2 font-sans">Chưa được phân công lớp trong niên khóa mới nhất</h3>
+        <p className="text-xs">Vui lòng liên hệ Ban Giáo Lý để được phân công lớp phụ trách.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12 font-body max-w-7xl mx-auto animate-fadeIn">

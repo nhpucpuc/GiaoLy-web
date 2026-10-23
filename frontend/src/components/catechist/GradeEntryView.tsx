@@ -25,7 +25,7 @@ interface GradeEntryViewProps {
 }
 
 export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = false }) => {
-  const { classes, selectedClassId, students, grades, catechists, saveAllGrades, currentRole, currentUser } = useApp();
+  const { classes, selectedClassId, selectedAcademicYear, students, grades, catechists, saveAllGrades, currentRole, currentUser } = useApp();
   const [selectedTranscriptStudent, setSelectedTranscriptStudent] = useState<Student | null>(null);
 
   // Giáo lý viên bắt buộc chỉ xem và nhập điểm cho đúng lớp được Admin phân công
@@ -33,7 +33,9 @@ export const GradeEntryView: React.FC<GradeEntryViewProps> = ({ isReadOnly = fal
     ? currentUser.assignedClassId
     : selectedClassId;
 
-  const currentClass = classes.find((c) => c.id === targetClassId) || classes.find((c) => c.id === selectedClassId) || classes[0];
+  const currentClass = currentRole === 'catechist'
+    ? classes.find((c) => c.id === targetClassId && c.academicYear === selectedAcademicYear)
+    : classes.find((c) => c.id === targetClassId) || classes.find((c) => c.id === selectedClassId) || classes[0];
   const classStudents = currentClass ? students.filter((s) => s.classId === currentClass.id) : [];
 
   // Chế độ Lọc danh sách: 'ALL' (A-Z), 'TOP_4' (Top 4 điểm cao nhất), 'NOT_PASSED' (Chưa đạt < 5.0)

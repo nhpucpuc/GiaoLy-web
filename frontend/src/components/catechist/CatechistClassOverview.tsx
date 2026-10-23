@@ -42,6 +42,7 @@ export const CatechistClassOverview: React.FC = () => {
   const {
     classes,
     selectedClassId,
+    selectedAcademicYear,
     students,
     grades,
     catechists,
@@ -58,10 +59,11 @@ export const CatechistClassOverview: React.FC = () => {
       ? currentUser.assignedClassId
       : selectedClassId;
 
-  const currentClass =
-    classes.find((c) => c.id === targetClassId) ||
-    classes.find((c) => c.id === selectedClassId) ||
-    classes[0];
+  const currentClass = currentRole === 'catechist'
+    ? classes.find((c) => c.id === targetClassId && c.academicYear === selectedAcademicYear)
+    : classes.find((c) => c.id === targetClassId) ||
+      classes.find((c) => c.id === selectedClassId) ||
+      classes[0];
 
   const classStudents: Student[] = useMemo(() => {
     return currentClass

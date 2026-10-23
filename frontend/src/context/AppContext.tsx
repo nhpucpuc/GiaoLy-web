@@ -71,6 +71,14 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const getLatestAcademicYear = (years: string[]): string => {
+  return [...years].sort((a, b) => {
+    const aStart = Number(a.match(/\d{4}/)?.[0] || 0);
+    const bStart = Number(b.match(/\d{4}/)?.[0] || 0);
+    return bStart - aStart;
+  })[0] || '2026 - 2027';
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
     // Clear legacy localStorage once to avoid old cross-tab state leakage
@@ -152,6 +160,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         api.getAcademicYears().catch(() => ['2026 - 2027']),
       ]);
 
+      const normalizedYears = Array.isArray(resYears) && resYears.length > 0
+        ? resYears
+        : ['2026 - 2027'];
+      const latestAcademicYear = getLatestAcademicYear(normalizedYears);
+      if (currentRole === 'catechist' && selectedAcademicYear !== latestAcademicYear) {
+        setSelectedAcademicYear(latestAcademicYear);
+      }
+
       setClasses(resClasses || []);
       setStudents(sortStudentsByVietnameseName(resStudents || []));
       setAnnouncements(resAnnouncements || []);
@@ -189,12 +205,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Tự động chọn lớp phụ trách nếu là Giáo Lý Viên
       if (resClasses && resClasses.length > 0) {
         setSelectedClassId((prev) => {
-          if (currentRole === 'catechist' && currentUser?.assignedClassId) {
-            return currentUser.assignedClassId;
+          if (currentRole === 'catechist') {
+            const assignedLatestClass = resClasses.find(
+              (c) => c.id === currentUser?.assignedClassId && c.academicYear === latestAcademicYear
+            );
+            return assignedLatestClass?.id || '';
           }
           const stillExists = resClasses.some((c) => c.id === prev);
           return stillExists ? prev : resClasses[0].id;
         });
+      } else if (currentRole === 'catechist') {
+        setSelectedClassId('');
       }
     } catch {
       setIsBackendConnected(false);
@@ -216,15 +237,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Khóa cứng lớp phụ trách đối với role Giáo Lý Viên
   useEffect(() => {
-    if (currentRole === 'catechist' && currentUser?.assignedClassId) {
-      setSelectedClassId(currentUser.assignedClassId);
+    if (currentRole === 'catechist') {
+      const assignedLatestClass = classes.find(
+        (c) => c.id === currentUser?.assignedClassId && c.academicYear === selectedAcademicYear
+      );
+      setSelectedClassId(assignedLatestClass?.id || '');
     }
-  }, [currentRole, currentUser?.assignedClassId]);
+  }, [classes, currentRole, currentUser?.assignedClassId, selectedAcademicYear]);
 
   // Bộ điều hướng chọn lớp an toàn theo phân quyền
   const handleSetSelectedClassId = (classId: string) => {
-    if (currentRole === 'catechist' && currentUser?.assignedClassId) {
-      setSelectedClassId(currentUser.assignedClassId);
+    if (currentRole === 'catechist') {
+      const assignedLatestClass = classes.find(
+        (c) => c.id === currentUser?.assignedClassId && c.academicYear === selectedAcademicYear
+      );
+      setSelectedClassId(assignedLatestClass?.id || '');
       return;
     }
     setSelectedClassId(classId);
@@ -238,6 +265,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (Array.isArray(res)) setGrades(res);
         })
         .catch(() => {});
+    } else {
+      setGrades([]);
     }
   }, [selectedClassId]);
 
@@ -306,14 +335,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setActiveTab('dashboard');
         } else if (mappedRole === 'catechist') {
           setActiveTab('class-overview');
-          if (profile.assignedClassId) {
-            setSelectedClassId(profile.assignedClassId);
-          }
+          setSelectedClassId('');
         } else if (mappedRole === 'parent') {
           setActiveTab('parent-portal');
         }
 
-        await refreshData();
         return { success: true, role: mappedRole };
       }
       return { success: false, message: 'Đăng nhập không thành công!' };

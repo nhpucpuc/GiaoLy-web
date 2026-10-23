@@ -119,7 +119,8 @@ export const AcademicYearManager: React.FC = () => {
               <p className="text-xs text-emerald-800 mt-1">
                 Đã phân bổ <strong>{resultMessage.promotedCount}</strong> học sinh lên lớp mới,{' '}
                 <strong>{resultMessage.graduatedCount}</strong> học sinh tốt nghiệp Vào Đời 2,{' '}
-                và tạo mới <strong>{resultMessage.newClassesCreated}</strong> lớp học cho niên khóa <strong>{resultMessage.toYear}</strong>.
+                chuyển <strong>{resultMessage.reassignedCatechistCount || 0}</strong> phân công giáo lý viên,{' '}
+                và bảo đảm đủ <strong>{resultMessage.totalClasses}</strong> lớp học cho niên khóa <strong>{resultMessage.toYear}</strong>.
               </p>
             </div>
           </div>
@@ -199,11 +200,15 @@ export const AcademicYearManager: React.FC = () => {
               <ul className="text-xs text-on-surface-variant space-y-1.5">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span><strong>Sao chép 23 lớp học</strong> sang năm mới {toYear} giữ nguyên phân phòng và ca học.</span>
+                  <span><strong>Sao chép đúng {classes.length} lớp học</strong> sang năm mới {toYear}, giữ nguyên tên lớp, phân phòng và ca học.</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span><strong>Chuyển lớp học sinh</strong>: Khai Tâm 1 ➔ 2 ➔ Xưng Tội 1 ➔ 2 ➔ Thêm Sức 1 ➔ 2 ➔ 3 ➔ Bao Đồng 1 ➔ 2 ➔ 3 ➔ Vào Đời 1 ➔ 2.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span><strong>Chuyển phân công giáo lý viên</strong>: Giữ nguyên tên lớp phụ trách và chuyển sang ID lớp của niên khóa mới.</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
